@@ -2,25 +2,29 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct DialogueCharacter
+namespace Starborn.File
 {
-    public string filename;
-    public Dictionary<int, Emotion> expressions;
-    
-    [System.Serializable]
-    public struct Emotion
+    public struct DialogueCharacter
     {
-        public string expression;
-        public Texture2D sprite;
-        public float scale;
-        public Vector2 offset;
-        public Emotion(string[] args)
-        {
-            expression = "";
-            sprite = null;
-            scale = 1;
-            offset = Vector2.zero;
+        public string filename;
+        public Dictionary<int, Emotion> expressions;
 
+        [System.Serializable]
+        public struct Emotion
+        {
+            public string expression;
+            public byte[] sprite;
+            public float scale;
+            public Vector2 offset;
+            public Emotion(string[] args)
+            {
+                expression = "";
+                sprite = null;
+                scale = 1;
+                offset = Vector2.zero;
+
+            }
         }
     }
 }
+
