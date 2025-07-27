@@ -1,11 +1,13 @@
 {
   "dependencies": {
-    "com.hareraisingstudios.rabbyte": {
-      "version": "https://github.com/HareRaisingStudios/Rabbyte.git?path=/Assets/Scripts/Rabbyte",
+    "com.hareraisinggames.rabbyte": {
+      "version": "https://github.com/HareRaisingGames/Rabbyte.git?path=/Assets/Scripts/Rabbyte",
       "depth": 0,
       "source": "git",
-      "dependencies": {},
-      "hash": "16308e1ba373723d724ccc48481dbeb74205fcb7"
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+      },
+      "hash": "f645544fa97e0b535e54f1ba103f17917a885e14"
     },
     "com.unity.2d.animation": {
       "version": "9.1.1",
