@@ -8,11 +8,13 @@ using System.IO;
 using SFB;
 using Rabbyte;
 using TMPro;
+using UnityEngine.Events;
 
 public class CharacterEditor : MonoBehaviour
 {
     public SBCFile curFile;
     public SBCFile loadedFile;
+    public Emotion phantom;
 
     public Image spriteHolder;
     public TMP_InputField characterNameField;
@@ -27,27 +29,33 @@ public class CharacterEditor : MonoBehaviour
     public Emotion curEmotion;
 
     public List<string> backupList;
+    public GameObject warningMessage;
+    public Button yes;
 
     Vector2 defaultSize = new Vector2(150, 150);
     Vector2 spriteSize;
 
-    Vector2 defaultOffsets = new Vector2(0, 0);
+    //Vector2 defaultOffsets = new Vector2(0, 0);
+
+    public TMP_Dropdown ghostDropdown;
+    public Image ghostSprite;
 
     // Start is called before the first frame update
     void Start()
     {
-        curFile = new SBCFile();
-        loadedFile = new SBCFile();
+        curFile = new SBCFile(false);
+        loadedFile = new SBCFile(false);
         backupList = new List<string>() { "" };
         curFile.curExp = 0;
 
+        if (ghostSprite != null) ghostSprite.gameObject.SetActive(false);
+        if (warningMessage != null) warningMessage.SetActive(false);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.K))
-            Debug.Log(curFile.filename);
+
     }
 
     public void AddImage()
@@ -89,21 +97,60 @@ public class CharacterEditor : MonoBehaviour
         expressionsDropdown.options[curFile.curExp].text = curFile.curEmotion.expression;
         //Debug.Log(backupList.Count);
         backupList[curFile.curExp] = curFile.curEmotion.expression;
+
+        if(ghostDropdown.options.Count <= 1 && expressionNameField.text != "")
+        {
+            for(int i = 0; i < backupList.Count; i++)
+                ghostDropdown.AddOptions(new List<string>() { "" });
+                
+        }
+        try
+        {
+            ghostDropdown.options[curFile.curExp + 1].text = curFile.curEmotion.expression;
+        }
+        catch(System.Exception e)
+        {
+            //Debug.Log("New Character is being loaded");
+        }
     }
 
     public void NewCharacter()
     {
-        Debug.Log(curFile.Equals(loadedFile));
+        //Debug.Log(curFile.Equals(loadedFile));
+        if(curFile.Equals(loadedFile))
+        {
+            CreateNewCharacter();
+        }
+        else
+        {
+            warningMessage.SetActive(true);
+            yes.onClick.AddListener(() => {
+                CreateNewCharacter();
+                No();
+            });
+        }
     }
 
     public void CreateNewCharacter()
     {
-
+        expressionsDropdown.ClearOptions();
+        ghostDropdown.ClearOptions();
+        Start();
+        characterNameField.text = "";
+        expressionsDropdown.AddOptions(new List<string>() { "" });
+        ghostDropdown.AddOptions(new List<string>() { "" });
+        SelectEmotion();
     }
 
     public void AddEmotion()
     {
         expressionsDropdown.AddOptions(new List<string>() { "" });
+        bool blank = true;
+        foreach(TMP_Dropdown.OptionData optionData in expressionsDropdown.options)
+        {
+            if (optionData.text != "") blank = false;
+        }
+        if(!blank) ghostDropdown.AddOptions(new List<string>() { "" });
         curFile.addExpression();
         backupList.Add("");
     }
@@ -115,14 +162,25 @@ public class CharacterEditor : MonoBehaviour
         backupList.Remove(expressionName);
         expressionsDropdown.ClearOptions();
         expressionsDropdown.AddOptions(backupList);
+        ghostDropdown.ClearOptions();
+        List<string> ghostList = new List<string>() { "" };
+        ghostList.AddRange(backupList);
+        ghostDropdown.AddOptions(ghostList);
+        if (expressionsDropdown.options.Count == 0)
+        {
+            backupList.Add("");
+            expressionsDropdown.AddOptions(backupList);
+        }
         if (curFile.curExp >= curFile.expressions.Count) curFile.curExp = curFile.expressions.Count - 1;
-        expressionNameField.text = curFile.curEmotion.expression;
+        /*expressionNameField.text = curFile.curEmotion.expression;
         characterNameField.text = curFile.filename;
         scaleStepper.value = curFile.curEmotion.scale;
-        scaleStepper.field.text = scaleStepper.value.ToString();
+        scaleStepper.field.text = scaleStepper.displayValue;
         SetSprite(curFile.curEmotion.sprite);
-        SetSpriteScale();
+        SetSpriteScale();*/
+        SelectEmotion();
         expressionsDropdown.value = curFile.curExp;
+        SetGhostSprite();
     }
 
     public void SelectEmotion()
@@ -195,6 +253,30 @@ public class CharacterEditor : MonoBehaviour
         }
     }
 
+    public void SetGhostSprite()
+    {
+        if (ghostDropdown.value != 0)
+            phantom = curFile.expressions[ghostDropdown.value - 1];
+        else
+            phantom = new Emotion();
+
+        if(phantom.sprite != null)
+        {
+            ghostSprite.gameObject.SetActive(true);
+            Texture2D tex = new Texture2D(2, 2);
+            tex.LoadImage(phantom.sprite);
+            Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+            ghostSprite.sprite = sprite;
+            ghostSprite.SetNativeSize();
+            ghostSprite.rectTransform.sizeDelta *= phantom.scale;
+            ghostSprite.rectTransform.anchoredPosition = new Vector2(phantom.offset[0], phantom.offset[1]);
+        }
+        else
+        {
+            ghostSprite.gameObject.SetActive(false);
+        }
+    }
+
 
     public void SaveWindows()
     {
@@ -206,7 +288,7 @@ public class CharacterEditor : MonoBehaviour
                 filename = filename.Remove(filename.Length - 4);
                 StarbornFileHandler.WriteCharacter(curFile, filename);
                 StarbornFileHandler.PackCharacter(path);
-                //loadedFile = new(curFile);
+                loadedFile = new(curFile);
                 return;
             }
 
@@ -269,17 +351,23 @@ public class CharacterEditor : MonoBehaviour
                     List<string> emotions = new List<string>();
                     foreach (Emotion emotion in curFile.expressions) emotions.Add(emotion.expression);
                     expressionsDropdown.AddOptions(emotions);
+                    ghostDropdown.ClearOptions();
+                    List<string> ghostList = new List<string>() { "" };
+                    ghostList.AddRange(emotions);
+                    ghostDropdown.AddOptions(ghostList);
+                    ghostDropdown.value = 0;
                     backupList = emotions;
                     curFile.curExp = 0;
+                    characterNameField.text = curFile.filename;
                     /*expressionsDropdown.value = curFile.curExp;
                     expressionNameField.text = curFile.curEmotion.expression;
-                    characterNameField.text = curFile.filename;
                     scaleStepper.value = curFile.curEmotion.scale;
                     scaleStepper.field.text = scaleStepper.displayValue;
                     SetSprite(curFile.curEmotion.sprite);
                     SetSpriteScale();*/
                     SelectEmotion();
                     //Debug.Log(expressionsDropdown.options.Count);
+                    loadedFile = new(curFile);
 
                 }
                 catch (System.Exception e)
@@ -290,5 +378,12 @@ public class CharacterEditor : MonoBehaviour
             }
             await Task.Yield();
         });
+    }
+
+    public void No()
+    {
+        yes.onClick.RemoveAllListeners();
+        warningMessage.SetActive(false);
+
     }
 }
