@@ -1,0 +1,7 @@
+Metadata
+
+Dialogue
+* When you load a file, the background option does not update UNLESS you've already entered into the scene (fixed)
+Characters
+* When you add a new character under metadata with pre-existing character packs, multiple packs will get added (fixed)
+* After duplicating a new character, it seems like the character changing settings won't work unless you go back.
