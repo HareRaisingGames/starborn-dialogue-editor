@@ -1,4 +1,13 @@
 {
+    "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.toxicbloud.moonsharp"
+      ]
+    }
+  ],
   "dependencies": {
     "com.hareraisinggames.rabbyte": "https://github.com/HareRaisingGames/Rabbyte.git?path=/Assets/Scripts/Rabbyte",
     "com.unity.collab-proxy": "2.3.1",

@@ -20,6 +20,10 @@ public class DialogueManager : Draggable
     bool isHiding = false;
     bool firstLoad = true;
 
+    bool newFile = true;
+    string filename;
+    string filepath;
+
     #region UI Elements
     public Button metadataButton;
     public Button dialogueButton;
@@ -203,9 +207,27 @@ public class DialogueManager : Draggable
         {
             dialogues.Add(new Dict(dialogue.Key, dialogue.Value));
         }
+
+        //Shortcuts
+        bool modifier = 
+            Input.GetKey(KeyCode.LeftControl) || 
+            Input.GetKey(KeyCode.RightControl) || 
+            Input.GetKey(KeyCode.LeftCommand) || 
+            Input.GetKey(KeyCode.RightCommand);
+
+        if(modifier)
+        {
+            if(Input.GetKeyDown(KeyCode.S))
+            {
+                if (newFile)
+                    SaveFilePanel();
+                else
+                    SaveFile(filepath, filename);
+            }
+        }
     }
 
-    #region Main Buttons
+#region Main Buttons
     public void SetManager(DialogueOptions option)
     {
         isHiding = false;
@@ -270,9 +292,9 @@ public class DialogueManager : Draggable
         }
         if (metadata != null) metadata.UpdateCharacterList();
     }
-    #endregion
+#endregion
 
-    #region Metadata Functions
+#region Metadata Functions
     public void SetDisplayName(string value)
     {
         curFile.displayName = value;
@@ -374,7 +396,7 @@ public class DialogueManager : Draggable
         }
     }
 
-    public void AddMusic(TMP_Text text)
+    public void AddMusic(TMP_Text text, Button button = null)
     {
         var extensions = new[]
         {
@@ -384,10 +406,13 @@ public class DialogueManager : Draggable
         {
             if (paths.Length > 0)
             {
+                if (loadingIcon != null) loadingIcon.SetActive(true);
                 try
                 {
+                    if (button != null) button.enabled = false;
                     curFile.music = new AudioByte(paths[0]);
                     musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
+                    await Task.Delay(500);
                     text.text = curFile.music.name;
                 }
                 catch(SystemException e)
@@ -395,6 +420,8 @@ public class DialogueManager : Draggable
 
                 }
             }
+            if (loadingIcon != null) loadingIcon.SetActive(false);
+            if (button != null) button.enabled = true;
         });
     }
 
@@ -426,27 +453,35 @@ public class DialogueManager : Draggable
         {
             if (paths.Length > 0)
             {
+                if (loadingIcon != null) loadingIcon.SetActive(true);
+
                 try
                 {
                     var filename = paths[0].Split("\\")[paths[0].Split("\\").Length - 1];
                     filename = filename.Remove(filename.Length - 4);
                     var path = StarbornFileHandler.ExtractDialogue(paths[0]);
                     curFile = StarbornFileHandler.ReadSimpleDialogue(filename);
+
+                    this.filename = filename;
+                    filepath = paths[0];
+                    newFile = false;
+
                     //Add in characters
                     LoadCharacters();
                     //Add in backgrounds
                     bgList.Clear();
 
-                    if (loadingIcon != null) loadingIcon.SetActive(true);
-
-                    foreach(string bg in curFile.GetBackgrounds().Keys)
+                    foreach (string bg in curFile.GetBackgrounds().Keys)
                     {
                         bgList.Add(bg);
                     }
 
+                    
                     dialogueClips.Clear();
                     groups.Clear();
                     packs.Clear();
+
+                    // Create character sprites for each characters
                     int i = 0;
                     if (characters != null)
                     {
@@ -455,6 +490,8 @@ public class DialogueManager : Draggable
                             Destroy(child.gameObject);
                         }
                     }
+
+                    // Add in dialogue audio clips
                     foreach (BetaDialogueSequence dialogue in curFile.GetLines())
                     {
                         if (dialogue.audio != null)
@@ -462,7 +499,7 @@ public class DialogueManager : Draggable
                         else
                             dialogueClips.Add(i, null);
 
-                        
+
                         CreateCharacterGroup(i);
                         characters.positionPlacer.anchoredPosition = characters.defaultPosition;
                         for (int j = 0; j < dialogue.characters.Count; j++)
@@ -493,20 +530,19 @@ public class DialogueManager : Draggable
                     {
                         dialogue.gameObject.SetActive(true);
                         dialogue.Load(curFile);
-                        if(curOption != DialogueOptions.Dialogue) dialogue.gameObject.SetActive(false);
+                        if (curOption != DialogueOptions.Dialogue) dialogue.gameObject.SetActive(false);
                     }
-                    if(characters != null)
+                    //Update character data per line
+                    if (characters != null)
                     {
                         characters.gameObject.SetActive(true);
                         characters.Load(curFile);
                         if (curOption != DialogueOptions.Characters) characters.gameObject.SetActive(false);
                     }
 
-
-                    if(curFile.music != null)
+                    // Load in music file if exists
+                    if (curFile.music != null)
                         musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
-
-                    //loadedFile = new(curFile);
 
                 }
                 catch (System.Exception e)
@@ -520,7 +556,7 @@ public class DialogueManager : Draggable
         });
     }
 
-    public void SaveFile()
+    public void SaveFilePanel()
     {
         StandaloneFileBrowser.SaveFilePanelAsync("Save Dialogue File", "", (curFile.fileName != "" || curFile.fileName != null) ? curFile.fileName : "dialogue", "sbd", (string path) => {
             //Debug.Log(path.Length);
@@ -528,18 +564,51 @@ public class DialogueManager : Draggable
             {
                 var filename = path.Split("\\")[path.Split("\\").Length - 1];
                 filename = filename.Remove(filename.Length - 4);
-                curFile.fileName = filename;
-                StarbornFileHandler.WriteSimpleDialogue(curFile, filename);
-                StarbornFileHandler.PackDialogue(path);
-                //loadedFile = new(curFile);
+                SaveFile(path, filename);
+
                 return;
             }
 
         });
     }
-    #endregion
 
-    #region Dialogue Line Functions
+    async void SaveFile(string filepath, string filename)
+    {
+        if (loadingIcon != null) loadingIcon.SetActive(true);
+        curFile.fileName = filename;
+        StarbornFileHandler.WriteSimpleDialogue(curFile, filename);
+        StarbornFileHandler.PackDialogue(filepath);
+        await Task.Delay(500);
+        this.filename = filename;
+        this.filepath = filepath;
+
+        newFile = false;
+        if (loadingIcon != null) loadingIcon.SetActive(false);
+    }
+
+    public void CreateNewFile()
+    {
+        bgList.Clear();
+        dialogueClips.Clear();
+        groups.Clear();
+        packs.Clear();
+
+        if (characters != null)
+        {
+            foreach (Transform child in characters.characterPacksParent)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        filename = "";
+        filepath = "";
+        newFile = true;
+
+    }
+#endregion
+
+#region Dialogue Line Functions
     public void AddLine()
     {
         BetaDialogueSequence curLine = curFile.curLine;
@@ -787,10 +856,10 @@ public class DialogueManager : Draggable
             await Task.Yield();
         });
     }
-    #endregion
+#endregion
 
 
-    #region Character Packs
+#region Character Packs
     public void CreateCharacterGroup(int id)
     {
         GameObject newGroup = new GameObject(id.ToString());
@@ -846,6 +915,6 @@ public class DialogueManager : Draggable
             if (curOption != DialogueOptions.Characters) characters.gameObject.SetActive(false);
         }
     }
-    #endregion
+#endregion
 
 }

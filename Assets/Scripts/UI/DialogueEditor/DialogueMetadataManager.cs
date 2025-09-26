@@ -65,7 +65,7 @@ public class DialogueMetadataManager : OptionSelection
             });
 
             loadFile.onClick.AddListener(manager.LoadFile);
-            saveFile.onClick.AddListener(manager.SaveFile);
+            saveFile.onClick.AddListener(manager.SaveFilePanel);
 
             UpdateCharacterList();
         }
