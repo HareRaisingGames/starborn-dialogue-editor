@@ -1776,6 +1776,10 @@ PrefabInstance:
       value: CharacterEditor, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 4177356640118833297, guid: bfc9ae2ba344d2f40bb02f39a8db8ccf, type: 3}
+      propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_BoolArgument
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4177356640118833297, guid: bfc9ae2ba344d2f40bb02f39a8db8ccf, type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}

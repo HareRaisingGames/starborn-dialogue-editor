@@ -73,7 +73,14 @@ namespace UnityEngine.UI
 
         public void ChangeInInput(string type)
         {
-            _value = float.Parse(field.text);
+            try
+            {
+                _value = float.Parse(field.text);
+            }
+            catch
+            {
+                _value = 0;
+            }
             if (onValueChanged != null)
                 onValueChanged.Invoke(_value);
             //Debug.Log("Change");

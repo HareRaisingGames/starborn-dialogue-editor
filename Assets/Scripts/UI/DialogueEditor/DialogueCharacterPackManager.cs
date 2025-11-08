@@ -75,19 +75,31 @@ public class DialogueCharacterPackManager : OptionSelection
             }
             for (int i = 0; i < dialogueFile.characterPack.Count; i++)
             {
-                manager.packs[dialogueFile.id][i].UISetUp();
-                if (!manager.packs[dialogueFile.id][i].hasLoaded)
+                CharacterSprite character = null;
+                foreach (CharacterSprite pack in FindObjectsOfType<CharacterSprite>(true))
                 {
-                    manager.packs[dialogueFile.id][i].ManagerSetup();
+                    if (pack.charName == dialogueFile.characterPack[i].character)
+                    {
+                        character = pack;
+                        break;
+                    }
+
+                    //if(pack.character)
                 }
 
-                CharacterSprite character = manager.packs[dialogueFile.id][i].character;
-                if(character != null)
+                //manager.packs[dialogueFile.id][i].UISetUp();
+                //if (!manager.packs[dialogueFile.id][i].hasLoaded)
+                //{
+                //manager.packs[dialogueFile.id][i].ManagerSetup();
+                //}
+
+                //CharacterSprite character = manager.packs[dialogueFile.id][i].character;
+                if (character != null)
                 {
                     character.gameObject.SetActive(true);
-                    character.flipX = manager.packs[dialogueFile.id][i].pack.flipX;
-
-                    Alignment align = manager.packs[dialogueFile.id][i].pack.alignment;
+                    character.flipX = dialogueFile.characterPack[i].flipX;
+                    character.expression = dialogueFile.characterPack[i].emotion;
+                    Alignment align = dialogueFile.characterPack[i].alignment;
                     float xPos = 0;
                     switch (align)
                     {
@@ -102,7 +114,7 @@ public class DialogueCharacterPackManager : OptionSelection
                             break;
                     }
                     character.position = new Vector2(xPos, 0);
-                    character.xOffset = manager.packs[dialogueFile.id][i].pack.offset;
+                    character.xOffset = dialogueFile.characterPack[i].offset;
                     //character.position;
                 }
 
@@ -127,20 +139,53 @@ public class DialogueCharacterPackManager : OptionSelection
             {
                 characterPacksParent.Find(dialogueFile.id.ToString()).gameObject.SetActive(true);
             }
-
+            addButton.GetComponent<RectTransform>().anchoredPosition = defaultButtonPos;
+            positionPlacer.anchoredPosition = defaultPosition;
             for (int i = 0; i < dialogueFile.characterPack.Count; i++)
             {
-                manager.packs[dialogueFile.id][i].UISetUp();
-                if (!manager.packs[dialogueFile.id][i].hasLoaded)
+                CharacterSprite character = null;
+
+                foreach (CharacterSprite pack in FindObjectsOfType<CharacterSprite>(true))
                 {
-                    manager.packs[dialogueFile.id][i].ManagerSetup();
+                    if (pack.charName == dialogueFile.characterPack[i].character)
+                    {
+                        character = pack;
+                        break;
+                    }
+
+                    //if(pack.character)
                 }
 
-                CharacterSprite character = manager.packs[dialogueFile.id][i].character;
+                //manager.packs[dialogueFile.id][i].UISetUp();
+                //if (!manager.packs[dialogueFile.id][i].hasLoaded)
+                //{
+                //manager.packs[dialogueFile.id][i].ManagerSetup();
+                //}
+
+                //CharacterSprite character = manager.packs[dialogueFile.id][i].character;
+                //dialogueFile.characterPack[i].character = character;
                 if (character != null)
                 {
                     character.gameObject.SetActive(true);
-                    character.expression = manager.packs[dialogueFile.id][i].pack.emotion;
+                    character.flipX = dialogueFile.characterPack[i].flipX;
+                    character.expression = dialogueFile.characterPack[i].emotion;
+                    Alignment align = dialogueFile.characterPack[i].alignment;
+                    float xPos = 0;
+                    switch (align)
+                    {
+                        case Alignment.left:
+                            xPos = -325;
+                            break;
+                        case Alignment.right:
+                            xPos = 325;
+                            break;
+                        default:
+                            xPos = 0;
+                            break;
+                    }
+                    character.position = new Vector2(xPos, 0);
+                    character.xOffset = dialogueFile.characterPack[i].offset;
+                    //character.position;
                 }
 
                 float y = manager.packs[dialogueFile.id][i].GetComponent<RectTransform>().sizeDelta.y + 10;

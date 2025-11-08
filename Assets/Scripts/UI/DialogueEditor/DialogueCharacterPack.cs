@@ -20,6 +20,7 @@ public class DialogueCharacterPack : MonoBehaviour
     public TMP_Dropdown charactersDropdown;
     public TMP_Dropdown emotionsDropdown;
     public TMP_Dropdown alignment;
+    public TMP_Dropdown transition;
     public UIStepper offset;
     public Toggle flipX;
     public Toggle isSpeaking;
@@ -50,7 +51,7 @@ public class DialogueCharacterPack : MonoBehaviour
         
     }
 
-    public void AddCharacterPack(SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1)
+    void Character(SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1)
     {
         dialogueFile = file;
         packManager = manager;
@@ -58,25 +59,33 @@ public class DialogueCharacterPack : MonoBehaviour
         this.id = id;
 
         //Debug.Log(dialogueFile.characterPack.Count);
-        pack = dialogueFile.characterPack[id];
         this.manager = FindObjectOfType<DialogueManager>();
         characters = this.manager.characterList;
+    }
+    public void AddCharacterPack(SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1)
+    {
+        Character(file, manager, group, id);
+        pack = dialogueFile.characterPack[id];
         SetCharacter();
         ManagerSetup();
     }
 
-    public void SetCharacterPack(CharacterPack pack, SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1)
+    public void SetCharacterPack(CharacterPack pack, SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1, string character = "")
     {
-        dialogueFile = file;
-        packManager = manager;
-        this.group = group;
-        this.id = id;
+        Character(file, manager, group, id);
 
         //Debug.Log(dialogueFile.characterPack.Count);
         this.pack = pack;
 
-        this.manager = FindObjectOfType<DialogueManager>();
-        characters = this.manager.characterList;
+        foreach(CharacterSprite sprite in FindObjectsOfType<CharacterSprite>(true))
+        {
+            if(sprite.charName == character)
+            {
+                this.character = sprite;
+                break;
+            }
+        }
+
         charactersDropdown.ClearOptions();
         charactersDropdown.AddOptions(characters);
 
@@ -90,6 +99,10 @@ public class DialogueCharacterPack : MonoBehaviour
         emotionsDropdown.AddOptions(emotions);
 
         emotionsDropdown.value = UIUtils.GetDropdownValueByName(emotionsDropdown, pack.emotion);
+
+        transition.ClearOptions();
+        transition.AddOptions(new List<string>(System.Enum.GetNames(typeof(SpriteTransition))));
+        transition.value = UIUtils.GetDropdownValueByName(transition, Enum.GetName(typeof(SpriteTransition), pack.transition));
 
         curCharacter = true;
         //ManagerSetup();
@@ -116,6 +129,11 @@ public class DialogueCharacterPack : MonoBehaviour
             {
                 SetAlignment(alignment);
             });
+            transition.onValueChanged.AddListener(delegate{
+                string option = transition.options[transition.value].text;
+                pack.transition = (SpriteTransition)Enum.Parse(typeof(SpriteTransition), option);
+                dialogueFile.GetLines()[group].characters[id] = pack;
+            });
             offset.onValueChanged.AddListener(SetOffset);
             flipX.onValueChanged.AddListener(SetFlipX);
             isSpeaking.onValueChanged.AddListener(SetIsSpeaking);
@@ -138,10 +156,14 @@ public class DialogueCharacterPack : MonoBehaviour
     }
     public void UISetUp()
     {
+        transition.ClearOptions();
+        transition.AddOptions(new List<string>(System.Enum.GetNames(typeof(SpriteTransition))));
         charactersDropdown.value = UIUtils.GetDropdownValueByName(charactersDropdown, pack.character);
         emotionsDropdown.value = UIUtils.GetDropdownValueByName(emotionsDropdown, pack.emotion);
         alignment.value = UIUtils.GetDropdownValueByName(alignment, Enum.GetName(typeof(Alignment), pack.alignment));
+        transition.value = UIUtils.GetDropdownValueByName(transition, Enum.GetName(typeof(SpriteTransition), pack.transition));
         offset.value = pack.offset;
+        offset.startValue = pack.offset;
         flipX.isOn = pack.flipX;
         isSpeaking.isOn = pack.isSpeaking;
     }
@@ -266,8 +288,11 @@ public class DialogueCharacterPack : MonoBehaviour
     {
         pack.offset = offset;
         dialogueFile.GetLines()[group].characters[id] = pack;
+
         if (character != null)
             character.xOffset = offset;
+
+        //Debug.Log(character.position);
     }
 
     public void SetFlipX(bool flip)

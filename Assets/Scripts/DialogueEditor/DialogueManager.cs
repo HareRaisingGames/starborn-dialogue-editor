@@ -5,7 +5,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 using System.IO;
+using System.Diagnostics;
 using SFB;
 using Rabbyte;
 using TMPro;
@@ -25,6 +27,7 @@ public class DialogueManager : Draggable
     string filepath;
 
     #region UI Elements
+    [Header("UI Elements")]
     public Button metadataButton;
     public Button dialogueButton;
     public Button charactersButton;
@@ -78,6 +81,12 @@ public class DialogueManager : Draggable
     GraphicRaycaster m_Raycaster;
     PointerEventData m_PointerEventData;
     EventSystem m_EventSystem;
+    #endregion
+
+    #region Binary Data
+    [Header("Other Data")]
+    [RangeStep(100f, 800f, 100f)]
+    public int weight = 400;
     #endregion
 
     [System.Serializable]
@@ -476,7 +485,8 @@ public class DialogueManager : Draggable
                         bgList.Add(bg);
                     }
 
-                    
+                    bgList = bgList.Distinct().ToList();
+
                     dialogueClips.Clear();
                     groups.Clear();
                     packs.Clear();
@@ -509,7 +519,7 @@ public class DialogueManager : Draggable
                             DialogueCharacterPack pack = charPack.GetComponent<DialogueCharacterPack>();
                             packs[i].Add(pack);
                             //Out of bounds
-                            charPack.GetComponent<DialogueCharacterPack>().SetCharacterPack(dialogue.characters[j], curFile, characters, i, j);
+                            charPack.GetComponent<DialogueCharacterPack>().SetCharacterPack(dialogue.characters[j], curFile, characters, i, j, dialogue.characters[j].character);
                             charPack.transform.parent = groups[i].transform;
                             charPack.transform.localScale = Vector3.one;
                             charPack.GetComponent<RectTransform>().anchoredPosition = characters.placement;
@@ -532,22 +542,103 @@ public class DialogueManager : Draggable
                         dialogue.Load(curFile);
                         if (curOption != DialogueOptions.Dialogue) dialogue.gameObject.SetActive(false);
                     }
+                    dialogueText.text = curFile.text;
+
                     //Update character data per line
                     if (characters != null)
                     {
                         characters.gameObject.SetActive(true);
                         characters.Load(curFile);
                         if (curOption != DialogueOptions.Characters) characters.gameObject.SetActive(false);
+
+                        foreach (Transform character in sprites.transform)
+                        {
+                            character.gameObject.SetActive(false);
+                        }
+
+                        foreach(KeyValuePair<int, List<DialogueCharacterPack>> p in packs)
+                        {
+                            foreach(DialogueCharacterPack pack in p.Value)
+                            {
+                                pack.UISetUp();
+                                if (!pack.hasLoaded)
+                                {
+                                    pack.ManagerSetup();
+                                }
+                            }
+                        }
+                        for (int k = 0; k < curFile.characterPack.Count; k++)
+                        {
+                            CharacterSprite character = null;
+                            foreach(CharacterSprite pack in FindObjectsOfType<CharacterSprite>(true))
+                            {
+                                if(pack.charName == curFile.characterPack[k].character)
+                                {
+                                    character = pack;
+                                    break;
+                                }
+
+                                //if(pack.character)
+                            }
+                            
+                            /*packs[curFile.id][k].UISetUp();
+                            if (!packs[curFile.id][k].hasLoaded)
+                            {
+                                packs[curFile.id][k].ManagerSetup();
+                            }*/
+
+                            if (character != null)
+                            {
+                                character.gameObject.SetActive(true);
+                                character.flipX = packs[curFile.id][k].pack.flipX;
+                                character.expression = packs[curFile.id][k].pack.emotion;
+                                Alignment align = packs[curFile.id][k].pack.alignment;
+                                float xPos = 0;
+                                switch (align)
+                                {
+                                    case Alignment.left:
+                                        xPos = -325;
+                                        break;
+                                    case Alignment.right:
+                                        xPos = 325;
+                                        break;
+                                    default:
+                                        xPos = 0;
+                                        break;
+                                }
+                                character.position = new Vector2(xPos, 0);
+                                character.xOffset = packs[curFile.id][k].pack.offset;
+                                //character.position;
+                            }
+
+                            float y = packs[curFile.id][k].GetComponent<RectTransform>().sizeDelta.y + 10;
+                            characters.positionPlacer.anchoredPosition -= new Vector2(0, y);
+                            characters.addButton.GetComponent<RectTransform>().anchoredPosition -= new Vector2(0, y);
+
+                        }
                     }
 
                     // Load in music file if exists
                     if (curFile.music != null)
                         musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
 
+                    SetDialogueClip(dialogueClips[curFile.id]);
                 }
                 catch (System.Exception e)
                 {
-                    Debug.Log(e);
+                    StackTrace st = new StackTrace(e, true);
+
+                    // Get the top stack frame (where the exception was thrown)
+                    StackFrame frame = st.GetFrame(0);
+
+                    // Get the line number from the stack frame
+                    int line = frame.GetFileLineNumber();
+
+                    // Get the file name
+                    string fileName = frame.GetFileName();
+
+                    // Log or use the information
+                    UnityEngine.Debug.LogError($"Exception occurred in {fileName} at line {line}: {e.Message}");
                     return;
                 }
             }
@@ -709,9 +800,15 @@ public class DialogueManager : Draggable
     {
         curFile.ChangeDialogue(i);
         if (dialogue != null) dialogue.Load(curFile);
-        if (characters != null) characters.Load(curFile);
+        if (characters != null)
+        {
+            characters.Load(curFile);
+            characters.ChangeSelections();
+        }
+        //dialogueText.text = $"<font-weight = {weight}>{}</font-weight>";
         dialogueText.text = curFile.text;
         SetDialogueClip(dialogueClips[curFile.id]);
+
     }
 
     public void EditName(string name)
@@ -831,6 +928,7 @@ public class DialogueManager : Draggable
                     {
                         curFile.AddBackground(filename, imageData);
                         bgList.Add(filename);
+                        bgList = bgList.Distinct().ToList();
                         Texture2D tex = new Texture2D(2, 2);
                         tex.LoadImage(imageData);
                         Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
