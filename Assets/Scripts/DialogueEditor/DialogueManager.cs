@@ -607,7 +607,7 @@ public class DialogueManager : Draggable
                                         break;
                                 }
                                 character.position = new Vector2(xPos, 0);
-                                character.xOffset = packs[curFile.id][k].pack.offset;
+                                character.SetXOffset(packs[curFile.id][k].pack.offset);
                                 //character.position;
                             }
 

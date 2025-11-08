@@ -114,7 +114,7 @@ public class DialogueCharacterPackManager : OptionSelection
                             break;
                     }
                     character.position = new Vector2(xPos, 0);
-                    character.xOffset = dialogueFile.characterPack[i].offset;
+                    character.SetXOffset(dialogueFile.characterPack[i].offset);
                     //character.position;
                 }
 
@@ -184,7 +184,7 @@ public class DialogueCharacterPackManager : OptionSelection
                             break;
                     }
                     character.position = new Vector2(xPos, 0);
-                    character.xOffset = dialogueFile.characterPack[i].offset;
+                    character.SetXOffset(dialogueFile.characterPack[i].offset);
                     //character.position;
                 }
 

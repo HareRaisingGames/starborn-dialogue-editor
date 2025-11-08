@@ -290,7 +290,7 @@ public class DialogueCharacterPack : MonoBehaviour
         dialogueFile.GetLines()[group].characters[id] = pack;
 
         if (character != null)
-            character.xOffset = offset;
+            character.SetXOffset(offset);
 
         //Debug.Log(character.position);
     }
