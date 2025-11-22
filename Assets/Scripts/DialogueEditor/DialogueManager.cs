@@ -31,10 +31,12 @@ public class DialogueManager : Draggable
     public Button metadataButton;
     public Button dialogueButton;
     public Button charactersButton;
+    public Button scriptButton;
 
     public DialogueMetadataManager metadata;
     public DialogueLineManager dialogue;
     public DialogueCharacterPackManager characters;
+    public DialogueLuaManager scripts;
 
     [HideInInspector]
     public Transform sprites;
@@ -71,7 +73,8 @@ public class DialogueManager : Draggable
     {
         Metadata,
         Dialogue,
-        Characters
+        Characters,
+        Script
     }
 
     DialogueOptions curOption = DialogueOptions.Metadata;
@@ -125,6 +128,7 @@ public class DialogueManager : Draggable
         if (metadataButton != null) metadataButton.onClick.AddListener(() => { SetManager(DialogueOptions.Metadata); });
         if (dialogueButton != null) dialogueButton.onClick.AddListener(() => { SetManager(DialogueOptions.Dialogue); });
         if (charactersButton != null) charactersButton.onClick.AddListener(() => { SetManager(DialogueOptions.Characters); });
+        if (scriptButton != null) scriptButton.onClick.AddListener(() => { SetManager(DialogueOptions.Script); });
 
         SetManager(curOption);
     }
@@ -198,6 +202,11 @@ public class DialogueManager : Draggable
                 if (firstLoad) characters.gameObject.SetActive(true);
                 characters.gameObject.SetActive(false);
             }
+            if (scripts != null)
+            {
+                if (firstLoad) scripts.gameObject.SetActive(true);
+                scripts.gameObject.SetActive(false);
+            }
         }
 
         firstLoad = false;
@@ -243,10 +252,12 @@ public class DialogueManager : Draggable
         if (metadata != null) metadata.gameObject.SetActive(false);
         if (dialogue != null) dialogue.gameObject.SetActive(false);
         if (characters != null) characters.gameObject.SetActive(false);
+        if (scripts != null) scripts.gameObject.SetActive(false);
 
         metadataButton.interactable = true;
         dialogueButton.interactable = true;
         charactersButton.interactable = true;
+        scriptButton.interactable = true;
 
         switch(option)
         {
@@ -273,6 +284,14 @@ public class DialogueManager : Draggable
                     characters.Load(curFile);
                 }
                 charactersButton.interactable = false;
+                break;
+            case DialogueOptions.Script:
+                if (scripts != null)
+                {
+                    scripts.gameObject.SetActive(true);
+                    scripts.Load(curFile);
+                }
+                scriptButton.interactable = false;
                 break;
         }
 
@@ -618,8 +637,15 @@ public class DialogueManager : Draggable
                         }
                     }
 
-                    // Load in music file if exists
-                    if (curFile.music != null)
+                    if (scripts != null)
+                    {
+                        scripts.gameObject.SetActive(true);
+                        scripts.Load(curFile);
+                        if (curOption != DialogueOptions.Script) scripts.gameObject.SetActive(false);
+                    }
+
+                        // Load in music file if exists
+                        if (curFile.music != null)
                         musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
 
                     SetDialogueClip(dialogueClips[curFile.id]);
@@ -746,6 +772,11 @@ public class DialogueManager : Draggable
             //CreateCharacterGroup(curLine.id + 1);
             CloneCharacterGroup(curLine.id + 1, groups[curLine.id]);
         }
+        if (scripts != null)
+        {
+            //scripts.gameObject.SetActive(true);
+            scripts.Load(curFile);
+        }
 
     }
     public void RemoveLine(int id)
@@ -804,6 +835,11 @@ public class DialogueManager : Draggable
         {
             characters.Load(curFile);
             characters.ChangeSelections();
+        }
+        if (scripts != null)
+        {
+            //scripts.gameObject.SetActive(true);
+            scripts.Load(curFile);
         }
         //dialogueText.text = $"<font-weight = {weight}>{}</font-weight>";
         dialogueText.text = curFile.text;
@@ -1013,6 +1049,23 @@ public class DialogueManager : Draggable
             if (curOption != DialogueOptions.Characters) characters.gameObject.SetActive(false);
         }
     }
-#endregion
+    #endregion
 
+
+    #region Lua Scripting
+    public void OnStartScript(string onStart)
+    {
+        curFile.onStart = onStart;
+    }
+
+    public void OnIntervalScript(string onWord)
+    {
+        curFile.onWord = onWord;
+    }
+
+    public void OnEndScript(string onEnd)
+    {
+        curFile.onEnd = onEnd;
+    }
+    #endregion
 }

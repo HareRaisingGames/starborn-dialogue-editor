@@ -66,6 +66,8 @@ public class DialogueCharacterPack : MonoBehaviour
     {
         Character(file, manager, group, id);
         pack = dialogueFile.characterPack[id];
+        transition.ClearOptions();
+        transition.AddOptions(new List<string>(System.Enum.GetNames(typeof(SpriteTransition))));
         SetCharacter();
         ManagerSetup();
     }
@@ -209,7 +211,8 @@ public class DialogueCharacterPack : MonoBehaviour
                 {
                     character = charac.GetComponent<CharacterSprite>();
                     character.gameObject.SetActive(true);
-
+                    character.offsetX = pack.offset;
+                    character.flipX = pack.flipX;
                     float xPos = 0;
                     switch (pack.alignment)
                     {
