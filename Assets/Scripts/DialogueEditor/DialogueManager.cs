@@ -55,7 +55,10 @@ public class DialogueManager : Draggable
 
     [HideInInspector]
     public Dictionary<int, List<DialogueCharacterPack>> packs = new Dictionary<int, List<DialogueCharacterPack>>();
-
+    // Checks for all characters that have not been used yet in line
+    public Dictionary<int, List<string>> unassignedCharacters = new Dictionary<int, List<string>>();
+    // Checks for all characters that have been used in line
+    public Dictionary<int, List<string>> assignedCharacters = new Dictionary<int, List<string>>();
     public Dictionary<int, GameObject> groups = new Dictionary<int, GameObject>();
 
 
@@ -114,6 +117,8 @@ public class DialogueManager : Draggable
         sprites = GameObject.Find("Sprites").transform;
         dialogueClips.Add(0, null);
         CreateCharacterGroup(0);
+        unassignedCharacters.Add(0, new List<string>());
+        assignedCharacters.Add(0, new List<string>());
         whisper = FindObjectOfType<WhisperManager>();
     }
     void Start()
@@ -372,10 +377,15 @@ public class DialogueManager : Draggable
                         characterSprite.rectTransform.anchoredPosition = Vector2.zero;
                         characterSprite.rectTransform.localScale = Vector2.one;
                         characterSprite.gameObject.SetActive(false);
-                        characterFiles.Add(character);
-                        characterList.Add(filename);
-                        if (metadata != null) metadata.UpdateCharacterList();
                     }
+                    else
+                    {
+                        characterFiles.Remove(character);
+                        characterList.Remove(filename);
+                    }
+                    characterFiles.Add(character);
+                    characterList.Add(filename);
+                    if (metadata != null) metadata.UpdateCharacterList();
                     //Debug.Log(curFile.AddCharacter(character));
                     /*var path = StarbornFileHandler.ExtractDialogue(paths[0]);
                     curFile = StarbornFileHandler.ReadSimpleDialogue(filename);
@@ -705,10 +715,15 @@ public class DialogueManager : Draggable
 
     public void CreateNewFile()
     {
+        if (bgImage.sprite != null)
+            bgImage.sprite = null;
+
         bgList.Clear();
         dialogueClips.Clear();
         groups.Clear();
         packs.Clear();
+        unassignedCharacters.Clear();
+        assignedCharacters.Clear();
 
         if (characters != null)
         {
@@ -718,10 +733,42 @@ public class DialogueManager : Draggable
             }
         }
 
+        foreach (Transform sprite in sprites)
+        {
+            Destroy(sprite.gameObject);
+        }
+
         filename = "";
         filepath = "";
         newFile = true;
 
+        curFile = new SimpleSBDFile();
+        dialogueClips.Add(0, null);
+        unassignedCharacters.Add(0, new List<string>());
+        assignedCharacters.Add(0, new List<string>());
+        CreateCharacterGroup(0);
+
+/*        if (metadata != null)
+        {
+            metadata.gameObject.SetActive(true);
+            metadata.Load(curFile);
+            if (curOption != DialogueOptions.Metadata) metadata.gameObject.SetActive(false);
+        }
+        //Update dialogue data
+        if (dialogue != null)
+        {
+            dialogue.gameObject.SetActive(true);
+            dialogue.Load(curFile);
+            if (curOption != DialogueOptions.Dialogue) dialogue.gameObject.SetActive(false);
+        }
+        dialogueText.text = curFile.text;
+
+        if (scripts != null)
+        {
+            scripts.gameObject.SetActive(true);
+            scripts.Load(curFile);
+            if (curOption != DialogueOptions.Script) scripts.gameObject.SetActive(false);
+        }*/
     }
 #endregion
 

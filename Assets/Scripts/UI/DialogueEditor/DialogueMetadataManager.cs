@@ -26,6 +26,7 @@ public class DialogueMetadataManager : OptionSelection
 
     public Button loadFile;
     public Button saveFile;
+    public Button newFile;
     // Start is called before the first frame update
     public override void Start()
     {
@@ -66,6 +67,7 @@ public class DialogueMetadataManager : OptionSelection
 
             loadFile.onClick.AddListener(manager.LoadFile);
             saveFile.onClick.AddListener(manager.SaveFilePanel);
+            newFile.onClick.AddListener(manager.CreateNewFile);
 
             UpdateCharacterList();
         }

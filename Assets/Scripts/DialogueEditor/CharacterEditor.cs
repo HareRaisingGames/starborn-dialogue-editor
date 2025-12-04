@@ -219,7 +219,10 @@ public class CharacterEditor : MonoBehaviour
             spriteHolder.sprite = null;
             spriteHolder.rectTransform.sizeDelta = defaultSize;
         }
-            
+        SetSpriteScale();
+        SetOffset(false);
+        SetOffset(true);
+
     }
 
     public void SetSpriteScale()

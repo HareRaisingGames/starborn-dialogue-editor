@@ -17,10 +17,6 @@ public class DialogueCharacterPackManager : OptionSelection
     //[HideInInspector]
     public Transform characterPacksParent;
 
-    List<GameObject> packObjects = new List<GameObject>();
-    List<List<CharacterPack>> characterPacks = new List<List<CharacterPack>>();
-    List<List<GameObject>> packs = new List<List<GameObject>>();
-
     public RectTransform positionPlacer;
     public Vector2 defaultPosition;
 

@@ -114,12 +114,16 @@ public class DialogueLineManager : OptionSelection
             //background.value = UIUtils.GetDropdownValueByName(background, sBDFile.background);
 
 
-            if (sBDFile.background != null)
+            if (sBDFile.background != null || sBDFile.background != "")
             {
                 Texture2D tex = new Texture2D(2, 2);
                 tex.LoadImage(sBDFile.getBackground());
                 Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
                 manager.bgImage.sprite = sprite;
+            }
+            else
+            {
+                manager.bgImage.sprite = null;
             }
 
             //background.value = background.options.IndexOf(sBDFile.background);
