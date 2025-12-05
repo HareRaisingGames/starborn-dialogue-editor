@@ -94,6 +94,10 @@ public class DialogueMetadataManager : OptionSelection
         chapter.text = sBDFile.chapter.ToString();
         type.value = new List<string>(System.Enum.GetNames(typeof(StoryType))).IndexOf(sBDFile.type.ToString());
         UpdateCharacterList();
+
+        if (sBDFile.music == null)
+            addMusic.GetComponentInChildren<TMP_Text>().text = "Add Music";
+
         description.text = sBDFile.description;
         if(sBDFile.music != null)
         {

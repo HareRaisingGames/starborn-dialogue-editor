@@ -335,12 +335,12 @@ public class DialogueManager : Draggable
 
     public void SetVolume(string value)
     {
-        curFile.volume = int.Parse(value);
+        curFile.volume = value != "" ? int.Parse(value) : null;
     }
 
     public void SetChapter(string value)
     {
-        curFile.chapter = int.Parse(value);
+        curFile.chapter = value != "" ? int.Parse(value) : null;
     }
 
     public void SetType(TMP_Dropdown dropdown)
@@ -747,8 +747,9 @@ public class DialogueManager : Draggable
         unassignedCharacters.Add(0, new List<string>());
         assignedCharacters.Add(0, new List<string>());
         CreateCharacterGroup(0);
+        characterList.Clear();
 
-/*        if (metadata != null)
+        if (metadata != null)
         {
             metadata.gameObject.SetActive(true);
             metadata.Load(curFile);
@@ -768,7 +769,7 @@ public class DialogueManager : Draggable
             scripts.gameObject.SetActive(true);
             scripts.Load(curFile);
             if (curOption != DialogueOptions.Script) scripts.gameObject.SetActive(false);
-        }*/
+        }
     }
 #endregion
 

@@ -111,10 +111,8 @@ public class DialogueLineManager : OptionSelection
 
             bgList = StringUtils.CopyList(manager.bgList);
             background.RefreshShownValue();
-            //background.value = UIUtils.GetDropdownValueByName(background, sBDFile.background);
 
-
-            if (sBDFile.background != null || sBDFile.background != "")
+            if (sBDFile.background != null && sBDFile.background != "")
             {
                 Texture2D tex = new Texture2D(2, 2);
                 tex.LoadImage(sBDFile.getBackground());
