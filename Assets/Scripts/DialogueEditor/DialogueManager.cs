@@ -23,6 +23,7 @@ public class DialogueManager : Draggable
     bool firstLoad = true;
 
     bool newFile = true;
+    bool saved = true;
     string filename;
     string filepath;
 
@@ -61,6 +62,8 @@ public class DialogueManager : Draggable
     public Dictionary<int, List<string>> assignedCharacters = new Dictionary<int, List<string>>();
     public Dictionary<int, GameObject> groups = new Dictionary<int, GameObject>();
 
+    public GameObject nameTag;
+    public TMP_Text nameTxt;
 
     public AudioSource musicSource;
     public AudioSource dialogueSource;
@@ -91,7 +94,9 @@ public class DialogueManager : Draggable
 
     #region Binary Data
     [Header("Other Data")]
+#if UNITY_EDITOR
     [RangeStep(100f, 800f, 100f)]
+#endif
     public int weight = 400;
     #endregion
 
@@ -120,6 +125,8 @@ public class DialogueManager : Draggable
         unassignedCharacters.Add(0, new List<string>());
         assignedCharacters.Add(0, new List<string>());
         whisper = FindObjectOfType<WhisperManager>();
+
+        loadedFile = new(curFile);
     }
     void Start()
     {
@@ -136,6 +143,8 @@ public class DialogueManager : Draggable
         if (scriptButton != null) scriptButton.onClick.AddListener(() => { SetManager(DialogueOptions.Script); });
 
         SetManager(curOption);
+
+        if (nameTag != null) nameTag.SetActive(false);
     }
 
     bool startDoubleClick = false;
@@ -145,7 +154,9 @@ public class DialogueManager : Draggable
     {
         base.Update();
 
-        if(isHovering)
+        if (nameTag != null && nameTxt != null) nameTag.SetActive(nameTxt.text != "");
+
+        if (isHovering)
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -481,14 +492,35 @@ public class DialogueManager : Draggable
 
     }
 
+    SimpleSBDFile beforeSave;
     public void LoadFile()
     {
+        if(beforeSave == null)
+            beforeSave = new(loadedFile);
+
+        if (!loadedFile.Equals(curFile))
+        {
+            UnsavedPopup.Open("Are you sure you want to load an existing file? Any unsaved progress on this one will be deleted", delegate ()
+            {
+                loadedFile = new(curFile);
+                LoadFile();
+            }, UnsavedPopup.Close);
+            return;
+        }
+
         var extensions = new[]
         {
             new ExtensionFilter("Dialogue Files", "sbd")
         };
         StandaloneFileBrowser.OpenFilePanelAsync("Load Dialogue", "", extensions, false, async (string[] paths) =>
         {
+            if (UnsavedPopup.instance != null)
+                UnsavedPopup.Close();
+
+            //If the user presses cancel, this will make sure that the unsaved progress will remain unsaved
+            loadedFile = new(beforeSave);
+            beforeSave = null;
+
             if (paths.Length > 0)
             {
                 if (loadingIcon != null) loadingIcon.SetActive(true);
@@ -572,6 +604,7 @@ public class DialogueManager : Draggable
                         if (curOption != DialogueOptions.Dialogue) dialogue.gameObject.SetActive(false);
                     }
                     dialogueText.text = curFile.text;
+                    nameTxt.text = curFile.name;
 
                     //Update character data per line
                     if (characters != null)
@@ -659,6 +692,7 @@ public class DialogueManager : Draggable
                         musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
 
                     SetDialogueClip(dialogueClips[curFile.id]);
+                    loadedFile = new(curFile);
                 }
                 catch (System.Exception e)
                 {
@@ -711,10 +745,23 @@ public class DialogueManager : Draggable
 
         newFile = false;
         if (loadingIcon != null) loadingIcon.SetActive(false);
+
+        loadedFile = new(curFile);
     }
 
     public void CreateNewFile()
     {
+        if(!loadedFile.Equals(curFile))
+        {
+            UnsavedPopup.Open("Are you sure you want to create a new file? Any unsaved progress will be deleted", delegate()
+            {
+                loadedFile = new(curFile);
+                CreateNewFile();
+                UnsavedPopup.Close();
+            }, UnsavedPopup.Close);
+            return;
+        }
+
         if (bgImage.sprite != null)
             bgImage.sprite = null;
 
@@ -763,6 +810,7 @@ public class DialogueManager : Draggable
             if (curOption != DialogueOptions.Dialogue) dialogue.gameObject.SetActive(false);
         }
         dialogueText.text = curFile.text;
+        nameTxt.text = curFile.name;
 
         if (scripts != null)
         {
@@ -770,6 +818,9 @@ public class DialogueManager : Draggable
             scripts.Load(curFile);
             if (curOption != DialogueOptions.Script) scripts.gameObject.SetActive(false);
         }
+
+        loadedFile = new(curFile);
+        //UnityEngine.Debug.Log(loadedFile.Equals(curFile));
     }
 #endregion
 
@@ -891,6 +942,7 @@ public class DialogueManager : Draggable
         }
         //dialogueText.text = $"<font-weight = {weight}>{}</font-weight>";
         dialogueText.text = curFile.text;
+        nameTxt.text = curFile.name;
         SetDialogueClip(dialogueClips[curFile.id]);
 
     }
@@ -898,6 +950,7 @@ public class DialogueManager : Draggable
     public void EditName(string name)
     {
         curFile.name = name;
+        nameTxt.text = name;
     }
 
     public void EditTextDialogue(string text)
@@ -1018,6 +1071,16 @@ public class DialogueManager : Draggable
                         Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
                         bgImage.sprite = sprite;
 
+
+                        float width = bgImage.sprite.texture.width;
+                        float height = bgImage.sprite.texture.height;
+                        float aspectRatio = width / height;
+
+                        DialogueUtils.SetImageFixedPosition(bgImage);
+                        /*if (!Mathf.Approximately(aspectRatio, mainAspectRatio))
+                            SetAspectRatio(bgImage);*/
+
+
                         if (dialogue != null)
                         {
                             dialogue.gameObject.SetActive(true);
@@ -1037,6 +1100,18 @@ public class DialogueManager : Draggable
             }
             await Task.Yield();
         });
+    }
+
+    public void RemoveBackground()
+    {
+        if(curFile.background != null)
+        {
+            curFile.RemoveBackground(curFile.background);
+            bgList.Remove(curFile.background);
+            bgList = bgList.Distinct().ToList();
+            bgImage.sprite = null;
+            if (dialogue != null) dialogue.Load(curFile);
+        }
     }
 #endregion
 
@@ -1099,6 +1174,36 @@ public class DialogueManager : Draggable
     }
     #endregion
 
+    public static readonly float mainAspectRatio = 16f/9f;
+    public static readonly Vector2 mainImageDimensions = new Vector2(800, 450);
+
+    private void OnEnable()
+    {
+        Application.wantsToQuit += LeaveApplication;
+    }
+
+    private void OnDisable()
+    {
+        Application.wantsToQuit -= LeaveApplication;
+    }
+
+    bool LeaveApplication()
+    {
+        if (!loadedFile.Equals(curFile))
+        {
+            UnsavedPopup.Open("Are you sure you want to quit? Any unsaved progress on this one will be deleted", delegate ()
+            {
+                loadedFile = new(curFile);
+                Application.Quit();
+
+            }, UnsavedPopup.Close);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 
     #region Lua Scripting
     public void OnStartScript(string onStart)

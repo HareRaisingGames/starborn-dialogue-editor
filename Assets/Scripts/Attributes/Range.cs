@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
+#if UNITY_EDITOR
 [CustomPropertyDrawer(typeof(RangeStepAttribute))]
 public class RangeStepDrawer : PropertyDrawer
 {
@@ -38,3 +39,4 @@ public class RangeStepAttribute : PropertyAttribute
         this.step = step;
     }
 }
+#endif

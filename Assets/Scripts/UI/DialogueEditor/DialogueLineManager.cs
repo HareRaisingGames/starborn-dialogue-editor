@@ -80,8 +80,11 @@ public class DialogueLineManager : OptionSelection
                     tex.LoadImage(manager.curFile.getBackground());
                     Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
                     manager.bgImage.sprite = sprite;
+                    DialogueUtils.SetImageFixedPosition(manager.bgImage);
                 }
             });
+
+            removeBackground.onClick.AddListener(manager.RemoveBackground);
         }
     }
 
@@ -118,10 +121,12 @@ public class DialogueLineManager : OptionSelection
                 tex.LoadImage(sBDFile.getBackground());
                 Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
                 manager.bgImage.sprite = sprite;
+                DialogueUtils.SetImageFixedPosition(manager.bgImage);
             }
             else
             {
                 manager.bgImage.sprite = null;
+                manager.bgImage.rectTransform.sizeDelta = DialogueManager.mainImageDimensions;
             }
 
             //background.value = background.options.IndexOf(sBDFile.background);
