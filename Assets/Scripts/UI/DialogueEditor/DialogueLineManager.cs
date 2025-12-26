@@ -53,6 +53,8 @@ public class DialogueLineManager : OptionSelection
                 manager.SetMinigame(minigame);
             });
 
+            UpdateMinigameList();
+
             playButton = playAudio.transform.GetChild(0).GetComponent<Image>();
 
             audioButton.onClick.AddListener(delegate
@@ -132,8 +134,10 @@ public class DialogueLineManager : OptionSelection
             //background.value = background.options.IndexOf(sBDFile.background);
         }
 
-        minigame.value = sBDFile.minigame != "" && sBDFile.minigame != null ? (int)(Minigame)Enum.Parse(typeof(Minigame), sBDFile.minigame) : 0;
 
+        //minigame.value = sBDFile.minigame != "" && sBDFile.minigame != null ? (int)(Minigame)Enum.Parse(typeof(Minigame), sBDFile.minigame) : 0;
+        
+        UpdateMinigameList();
         nameField.text = sBDFile.name;
         textField.text = sBDFile.text;
         autoPlay.isOn = sBDFile.autoSkip;
@@ -167,6 +171,15 @@ public class DialogueLineManager : OptionSelection
             background.ClearOptions();
             background.AddOptions(manager.bgList);
             SetBackground(manager.curFile.background);
+        }
+    }
+
+    void UpdateMinigameList()
+    {
+        if(manager != null)
+        {
+            minigame.value = UIUtils.GetDropdownValueByName(minigame, manager.curFile.minigame);
+            minigame.RefreshShownValue();
         }
     }
 }

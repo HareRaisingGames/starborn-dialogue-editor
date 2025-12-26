@@ -7,5 +7,6 @@ public enum Minigame
 {
     None,
     Tosstail,
-    LemonDrop
+    LemonDrop,
+    Boomerang
 }
