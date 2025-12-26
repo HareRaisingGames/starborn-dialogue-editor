@@ -89,7 +89,7 @@ public class DialogueMetadataManager : OptionSelection
 
     public override void Load(SimpleSBDFile sBDFile)
     {
-        displayName.text = sBDFile.displayName;
+        displayName.text = sBDFile.displayName != null ? sBDFile.displayName : "";
         volume.text = sBDFile.volume.ToString();
         chapter.text = sBDFile.chapter.ToString();
         type.value = new List<string>(System.Enum.GetNames(typeof(StoryType))).IndexOf(sBDFile.type.ToString());

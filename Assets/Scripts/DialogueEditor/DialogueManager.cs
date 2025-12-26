@@ -154,7 +154,7 @@ public class DialogueManager : Draggable
     {
         base.Update();
 
-        if (nameTag != null && nameTxt != null) nameTag.SetActive(nameTxt.text != "");
+        if (nameTag != null && nameTxt != null) nameTag.SetActive(nameTxt.text != "" && nameTxt.text != null);
 
         if (isHovering)
         {
@@ -258,6 +258,16 @@ public class DialogueManager : Draggable
                 else
                     SaveFile(filepath, filename);
             }
+
+            if(Input.GetKeyDown(KeyCode.O) && beforeSave == null)
+            {
+                LoadFile();
+            }
+
+            if (Input.GetKeyDown(KeyCode.N))
+            {
+                CreateNewFile();
+            }
         }
     }
 
@@ -275,7 +285,7 @@ public class DialogueManager : Draggable
         charactersButton.interactable = true;
         scriptButton.interactable = true;
 
-        switch(option)
+        switch (option)
         {
             case DialogueOptions.Metadata:
                 if (metadata != null)
@@ -312,6 +322,7 @@ public class DialogueManager : Draggable
         }
 
         curOption = option;
+        //UnityEngine.Debug.Log(loadedFile.Equals(curFile));
     }
 
     public void LoadCharacters()
@@ -818,6 +829,8 @@ public class DialogueManager : Draggable
             scripts.Load(curFile);
             if (curOption != DialogueOptions.Script) scripts.gameObject.SetActive(false);
         }
+
+        if (nameTag != null) nameTag.SetActive(false);
 
         loadedFile = new(curFile);
         //UnityEngine.Debug.Log(loadedFile.Equals(curFile));
