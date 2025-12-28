@@ -115,7 +115,8 @@ public class DialogueLineManager : OptionSelection
             }
 
             bgList = StringUtils.CopyList(manager.bgList);
-            background.RefreshShownValue();
+            SetBackground(sBDFile.background);
+            //background.RefreshShownValue();
 
             if (sBDFile.background != null && sBDFile.background != "")
             {

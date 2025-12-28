@@ -844,27 +844,55 @@ public class DialogueManager : Draggable
         curFile.InsertLineByValues(curLine.id + 1, curLine.name, "", curLine.background, curFile.minigame);
         //Remove any lines from files ahead
         int start = curLine.id + 2;
-        for (int i = start; i < curFile.GetLines().Count; i++)
+
+        Dictionary<int, AudioClip> baseDialogueClips = new Dictionary<int, AudioClip>(dialogueClips);
+        dialogueClips.Clear();
+
+        Dictionary<int, GameObject> baseGroups = new Dictionary<int, GameObject>(groups);
+        groups.Clear();
+
+        Dictionary<int, List<DialogueCharacterPack>> basePacks = new Dictionary<int, List<DialogueCharacterPack>>(packs);
+        packs.Clear();
+
+        for(int i = 0; i < start; i++)
         {
-            if (dialogueClips.ContainsKey(curFile.GetLines()[i].id - 1))
+            if (baseDialogueClips.ContainsKey(curFile.GetLines()[i].id))
             {
-                AudioClip clip = dialogueClips[curFile.GetLines()[i].id - 1];
-                dialogueClips.Remove(curFile.GetLines()[i].id - 1);
+                AudioClip clip = baseDialogueClips[curFile.GetLines()[i].id];
                 dialogueClips.Add(i, clip);
             }
 
-            if(groups.ContainsKey(curFile.GetLines()[i].id - 1))
+            if (baseGroups.ContainsKey(curFile.GetLines()[i].id))
             {
-                GameObject group = groups[curFile.GetLines()[i].id - 1];
-                groups.Remove(curFile.GetLines()[i].id - 1);
+                GameObject group = baseGroups[curFile.GetLines()[i].id];
+                groups.Add(i, group);
+            }
+
+            if (basePacks.ContainsKey(curFile.GetLines()[i].id))
+            {
+                List<DialogueCharacterPack> pack = basePacks[curFile.GetLines()[i].id];
+                packs.Add(i, pack);
+            }
+        }
+
+        for (int i = start; i < curFile.GetLines().Count; i++)
+        {
+            if (baseDialogueClips.ContainsKey(curFile.GetLines()[i].id - 1))
+            {
+                AudioClip clip = baseDialogueClips[curFile.GetLines()[i].id - 1];
+                dialogueClips.Add(i, clip);
+            }
+
+            if (baseGroups.ContainsKey(curFile.GetLines()[i].id - 1))
+            {
+                GameObject group = baseGroups[curFile.GetLines()[i].id - 1];
                 groups.Add(i, group);
                 groups[i].name = i.ToString();
             }
 
-            if (packs.ContainsKey(curFile.GetLines()[i].id - 1))
+            if (basePacks.ContainsKey(curFile.GetLines()[i].id - 1))
             {
-                List<DialogueCharacterPack> pack = packs[curFile.GetLines()[i].id - 1];
-                packs.Remove(curFile.GetLines()[i].id - 1);
+                List<DialogueCharacterPack> pack = basePacks[curFile.GetLines()[i].id - 1];
                 packs.Add(i, pack);
             }
         }
@@ -893,36 +921,77 @@ public class DialogueManager : Draggable
     }
     public void RemoveLine(int id)
     {
-        curFile.RemoveLineAtIndex(id);
-        dialogueClips.Remove(id);
         GameObject oldGroup = groups[id];
-        packs.Remove(id);
-        groups.Remove(id);
+        //dialogueClips.Remove(id);
+        //packs.Remove(id);
+        //groups.Remove(id);
         Destroy(oldGroup);
 
-        for (int i = id; i < curFile.GetLines().Count; i++)
+        List<AudioClip> priorDialogues = new List<AudioClip>();
+        List<GameObject> priorGroups = new List<GameObject>();
+        List<List<DialogueCharacterPack>> priorPacks = new List<List<DialogueCharacterPack>>();
+
+        for (int i = 0; i < curFile.GetLines().Count; i++)
         {
-            if (dialogueClips.ContainsKey(curFile.GetLines()[i].id))
+            if(i > id)
             {
-                AudioClip clip = dialogueClips[curFile.GetLines()[i].id];
-                dialogueClips.Remove(curFile.GetLines()[i].id);
+                if (dialogueClips.ContainsKey(curFile.GetLines()[i].id))
+                {
+                    priorDialogues.Add(dialogueClips[curFile.GetLines()[i].id]);
+                }
+
+                if (groups.ContainsKey(curFile.GetLines()[i].id))
+                {
+                    priorGroups.Add(groups[curFile.GetLines()[i].id]);
+                }
+
+                if (packs.ContainsKey(curFile.GetLines()[i].id))
+                {
+                    priorPacks.Add(packs[curFile.GetLines()[i].id]);
+                }
+            }
+        }
+
+        curFile.RemoveLineAtIndex(id);
+
+        Dictionary<int, AudioClip> baseDialogueClips = new Dictionary<int, AudioClip>(dialogueClips);
+        dialogueClips.Clear();
+
+        Dictionary<int, GameObject> baseGroups = new Dictionary<int, GameObject>(groups);
+        groups.Clear();
+
+        Dictionary<int, List<DialogueCharacterPack>> basePacks = new Dictionary<int, List<DialogueCharacterPack>>(packs);
+        packs.Clear();
+
+        for (int i = 0; i < id; i++)
+        {
+            if (baseDialogueClips.ContainsKey(curFile.GetLines()[i].id))
+            {
+                AudioClip clip = baseDialogueClips[curFile.GetLines()[i].id];
                 dialogueClips.Add(i, clip);
             }
-            if (groups.ContainsKey(curFile.GetLines()[i].id - 1))
+
+            if (baseGroups.ContainsKey(curFile.GetLines()[i].id))
             {
-                GameObject group = groups[curFile.GetLines()[i].id - 1];
-                groups.Remove(curFile.GetLines()[i].id - 1);
+                GameObject group = baseGroups[curFile.GetLines()[i].id];
                 groups.Add(i, group);
-                groups[i].name = i.ToString();
             }
-            if(packs.ContainsKey(curFile.GetLines()[i].id - 1))
+
+            if (basePacks.ContainsKey(curFile.GetLines()[i].id))
             {
-                List<DialogueCharacterPack> pack = packs[curFile.GetLines()[i].id - 1];
-                packs.Remove(curFile.GetLines()[i].id - 1);
+                List<DialogueCharacterPack> pack = basePacks[curFile.GetLines()[i].id];
                 packs.Add(i, pack);
             }
-            curFile.GetLines()[i].id = i;
+        }
 
+        for(int i = id; i < curFile.GetLines().Count; i++)
+        {
+            dialogueClips.Add(i, priorDialogues[i - id]);
+            groups.Add(i, priorGroups[i - id]);
+            groups[i].name = (i - id).ToString();
+            packs.Add(i, priorPacks[i - id]);
+
+            curFile.GetLines()[i].id = i - id;
         }
         
         if(curFile.GetLines().Count == 0)
@@ -937,7 +1006,7 @@ public class DialogueManager : Draggable
             curFile.SetDialogue(curFile.GetLines().Count - 1);
         }
 
-        if (dialogue != null) dialogue.Load(curFile);
+        ChangeLine(id);
     }
     public void ChangeLine(int i)
     {
