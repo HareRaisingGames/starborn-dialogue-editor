@@ -15,6 +15,18 @@ public class DialogueCharacterPack : MonoBehaviour
     List<string> characters = new List<string>();
     List<string> emotions = new List<string>();
 
+    public List<string> characterList
+    {
+        get
+        {
+            return characters;
+        }
+        set
+        {
+            characters = value;
+        }
+    }
+
     List<String> copyEmotions = new List<string>();
 
     public TMP_Dropdown charactersDropdown;
@@ -60,7 +72,9 @@ public class DialogueCharacterPack : MonoBehaviour
 
         //Debug.Log(dialogueFile.characterPack.Count);
         this.manager = FindObjectOfType<DialogueManager>();
-        characters = this.manager.characterList;
+        //characters = this.manager.characterList;
+        characters = new List<string>(this.manager.unassignedCharacters[group]);
+        //DebugUtils.DebugList(characters);
     }
     public void AddCharacterPack(SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1)
     {
@@ -75,11 +89,14 @@ public class DialogueCharacterPack : MonoBehaviour
     public void SetCharacterPack(CharacterPack pack, SimpleSBDFile file, DialogueCharacterPackManager manager, int group = -1, int id = -1, string character = "")
     {
         Character(file, manager, group, id);
-
+        List<string> shallow = new List<string>(characters);
         //Debug.Log(dialogueFile.characterPack.Count);
         this.pack = pack;
+        characters.Clear();
+        characters.Add(pack.character);
+        characters.AddRange(shallow);
 
-        foreach(CharacterSprite sprite in FindObjectsOfType<CharacterSprite>(true))
+        foreach (CharacterSprite sprite in FindObjectsOfType<CharacterSprite>(true))
         {
             if(sprite.charName == character)
             {
@@ -140,7 +157,7 @@ public class DialogueCharacterPack : MonoBehaviour
             flipX.onValueChanged.AddListener(SetFlipX);
             isSpeaking.onValueChanged.AddListener(SetIsSpeaking);
 
-            delete.onClick.AddListener(RemoveCharacterPack);
+            delete.onClick.AddListener(delegate() { RemoveCharacterPack(); });
 
         }
         hasLoaded = true;
@@ -176,9 +193,9 @@ public class DialogueCharacterPack : MonoBehaviour
         return this;
     }
 
-    public void RemoveCharacterPack()
+    public void RemoveCharacterPack(bool delete = false)
     {
-        packManager.RemoveCharacterPack(id);
+        packManager.RemoveCharacterPack(id, delete);
         if(character != null)
         {
             character.gameObject.SetActive(false);
@@ -187,18 +204,30 @@ public class DialogueCharacterPack : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void SetCharacter()
+    public void SetCharacter(bool keepExpression = false)
     {
         charactersDropdown.ClearOptions();
         charactersDropdown.AddOptions(characters);
         pack.character = charactersDropdown.options[charactersDropdown.value].text;
-        ChangeCharacter(charactersDropdown);
-        
+        ChangeCharacter(charactersDropdown, keepExpression);
+
     }
-    public void ChangeCharacter(TMP_Dropdown dropdown)
+    public void ChangeCharacter(TMP_Dropdown dropdown, bool keepExpression = false)
     {
+        string prevCharacter = pack.character;
         pack.character = dropdown.options[dropdown.value].text;
         dialogueFile.GetLines()[group].characters[id] = pack;
+
+        if(prevCharacter != pack.character)
+        {
+            manager.assignedCharacters[dialogueFile.id].Remove(prevCharacter);
+            manager.unassignedCharacters[dialogueFile.id].Add(prevCharacter);
+        }
+        
+        manager.assignedCharacters[dialogueFile.id].Add(pack.character);
+        manager.unassignedCharacters[dialogueFile.id].Remove(pack.character);
+
+        UpdateCharacterList();
 
         if (manager != null)
         {
@@ -234,11 +263,15 @@ public class DialogueCharacterPack : MonoBehaviour
 
         Dictionary<string, List<Emotion>> chars = dialogueFile.GetCharacters();
 
-        if(!curCharacter)
+        string expression = "";
+        if (!curCharacter)
         {
             List<Emotion> charEmotions = new List<Emotion>();
             if (chars.ContainsKey(dropdown.options[dropdown.value].text))
                 charEmotions = chars[dropdown.options[dropdown.value].text];
+
+            if (keepExpression)
+                expression = pack.emotion;
 
             emotions.Clear();
             foreach (Emotion emotion in charEmotions)
@@ -251,13 +284,19 @@ public class DialogueCharacterPack : MonoBehaviour
         }
 
         curCharacter = false;
-        ChangeEmotion(emotionsDropdown);
+        ChangeEmotion(emotionsDropdown, expression);
 
     }
 
-    public void ChangeEmotion(TMP_Dropdown dropdown)
+    public void ChangeEmotion(TMP_Dropdown dropdown, string expression = "")
     {
-        pack.emotion = dropdown.options[dropdown.value].text;
+        if(expression != "" && expression != null)
+        {
+            pack.emotion = expression;
+            emotionsDropdown.value = UIUtils.GetDropdownValueByName(emotionsDropdown, pack.emotion);
+        }
+        else
+            pack.emotion = dropdown.options[dropdown.value].text;
         dialogueFile.GetLines()[group].characters[id] = pack;
 
         if (character != null)
@@ -312,15 +351,25 @@ public class DialogueCharacterPack : MonoBehaviour
         dialogueFile.GetLines()[group].characters[id] = pack;
     }
 
-    public void UpdateList()
+    public void UpdateCharacterList(bool newCharacter = false)
     {
-        int value = charactersDropdown.value;
-        charactersDropdown.ClearOptions();
-        charactersDropdown.AddOptions(characters);
-        if(value >= charactersDropdown.options.Count)
+        foreach (KeyValuePair<int, List<DialogueCharacterPack>> packs in manager.packs)
         {
-            charactersDropdown.value = value - 1;
-            charactersDropdown.RefreshShownValue();
+            if (packs.Key == group)
+            {
+                foreach (DialogueCharacterPack pack in packs.Value)
+                {
+                    if (pack.id == id && !newCharacter)
+                        continue;
+
+                    List<string> updatedOpts = new List<string>();
+                    updatedOpts.Add(pack.pack.character);
+                    updatedOpts.AddRange(manager.unassignedCharacters[packs.Key]);
+                    pack.characters = updatedOpts;
+                    pack.charactersDropdown.ClearOptions();
+                    pack.charactersDropdown.AddOptions(pack.characters);
+                }
+            }
         }
     }
 }

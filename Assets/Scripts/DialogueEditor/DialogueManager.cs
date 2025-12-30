@@ -344,6 +344,10 @@ public class DialogueManager : Draggable
             characterSprite.gameObject.SetActive(false);
             characterFiles.Add(characterFile);
             characterList.Add(character.Key);
+            /*foreach (KeyValuePair<int, List<string>> unassignedCharacterList in unassignedCharacters)
+            {
+                unassignedCharacterList.Value.Add(character.Key);
+            }*/
         }
         if (metadata != null) metadata.UpdateCharacterList();
     }
@@ -407,7 +411,25 @@ public class DialogueManager : Draggable
                     }
                     characterFiles.Add(character);
                     characterList.Add(filename);
+
+                    for(int i = 0; i < unassignedCharacters.Keys.Count; i++)
+                    {
+                        if(!unassignedCharacters[i].Contains(filename) && !assignedCharacters[i].Contains(filename))
+                            unassignedCharacters[i].Add(filename);
+
+                        //UnityEngine.Debug.Log($"{i}: {unassignedCharacters.Count}");
+                    }
+
                     if (metadata != null) metadata.UpdateCharacterList();
+                    if (characters != null) characters.addButton.gameObject.SetActive(true);
+
+                    for (int i = 0; i < packs.Keys.Count; i++)
+                    {
+                        foreach (DialogueCharacterPack pack in packs[i])
+                        {
+                            pack.UpdateCharacterList(true);
+                        }
+                    }
                     //Debug.Log(curFile.AddCharacter(character));
                     /*var path = StarbornFileHandler.ExtractDialogue(paths[0]);
                     curFile = StarbornFileHandler.ReadSimpleDialogue(filename);
@@ -435,7 +457,32 @@ public class DialogueManager : Draggable
             string character = metadata.character.options[metadata.character.value].text;
             curFile.RemoveCharacter(character);
             characterList.Remove(character);
-            foreach(SBCFile charac in characterFiles)
+
+            foreach (KeyValuePair<int, List<string>> unassignedCharacterList in unassignedCharacters)
+            {
+                unassignedCharacterList.Value.Remove(character);
+            }
+            foreach (KeyValuePair<int, List<string>> assignedCharacterList in assignedCharacters)
+            {
+                assignedCharacterList.Value.Remove(character);
+            }
+            foreach(KeyValuePair<int, List<DialogueCharacterPack>> packGroup in packs)
+            {
+                for(int i = packGroup.Value.Count - 1; i >= 0; i--)
+                {
+                    DialogueCharacterPack pack = packGroup.Value[i];
+                    if(pack.character.charName == character)
+                    {
+                        packs[packGroup.Key][i].RemoveCharacterPack(true);
+                    }
+                    else
+                    {
+                        packs[packGroup.Key][i].UpdateCharacterList();
+                    }
+                }
+            }
+
+            foreach (SBCFile charac in characterFiles)
             {
                 if(charac.filename == character)
                 {
@@ -562,6 +609,8 @@ public class DialogueManager : Draggable
                     dialogueClips.Clear();
                     groups.Clear();
                     packs.Clear();
+                    unassignedCharacters.Clear();
+                    assignedCharacters.Clear();
 
                     // Create character sprites for each characters
                     int i = 0;
@@ -584,18 +633,27 @@ public class DialogueManager : Draggable
 
                         CreateCharacterGroup(i);
                         characters.positionPlacer.anchoredPosition = characters.defaultPosition;
+                        unassignedCharacters.Add(i, new List<string>(characterList));
+                        assignedCharacters.Add(i, new List<string>());
+
                         for (int j = 0; j < dialogue.characters.Count; j++)
                         {
                             GameObject charPack = Instantiate(characters.packPrefab, Vector3.zero, Quaternion.identity);
                             charPack.name = "Character";
                             DialogueCharacterPack pack = charPack.GetComponent<DialogueCharacterPack>();
                             packs[i].Add(pack);
+                            unassignedCharacters[i].Remove(dialogue.characters[j].character);
+                            assignedCharacters[i].Add(dialogue.characters[j].character);
                             //Out of bounds
-                            charPack.GetComponent<DialogueCharacterPack>().SetCharacterPack(dialogue.characters[j], curFile, characters, i, j, dialogue.characters[j].character);
+                            //charPack.GetComponent<DialogueCharacterPack>().SetCharacterPack(dialogue.characters[j], curFile, characters, i, j, dialogue.characters[j].character);
                             charPack.transform.parent = groups[i].transform;
                             charPack.transform.localScale = Vector3.one;
                             charPack.GetComponent<RectTransform>().anchoredPosition = characters.placement;
                             characters.positionPlacer.anchoredPosition -= new Vector2(0, charPack.GetComponent<RectTransform>().sizeDelta.y + 10);
+                        }
+                        for (int j = 0; j < dialogue.characters.Count; j++)
+                        {
+                            packs[i][j].SetCharacterPack(dialogue.characters[j], curFile, characters, i, j, dialogue.characters[j].character);
                         }
                         i++;
                     }
@@ -854,7 +912,13 @@ public class DialogueManager : Draggable
         Dictionary<int, List<DialogueCharacterPack>> basePacks = new Dictionary<int, List<DialogueCharacterPack>>(packs);
         packs.Clear();
 
-        for(int i = 0; i < start; i++)
+        Dictionary<int, List<string>> baseUnassignedCharacters = new Dictionary<int, List<string>>(unassignedCharacters);
+        unassignedCharacters.Clear();
+
+        Dictionary<int, List<string>> baseAssignedCharacters = new Dictionary<int, List<string>>(assignedCharacters);
+        assignedCharacters.Clear();
+
+        for (int i = 0; i < start; i++)
         {
             if (baseDialogueClips.ContainsKey(curFile.GetLines()[i].id))
             {
@@ -872,6 +936,18 @@ public class DialogueManager : Draggable
             {
                 List<DialogueCharacterPack> pack = basePacks[curFile.GetLines()[i].id];
                 packs.Add(i, pack);
+            }
+
+            if (baseUnassignedCharacters.ContainsKey(curFile.GetLines()[i].id))
+            {
+                List<string> unassignedCharacterList = baseUnassignedCharacters[curFile.GetLines()[i].id];
+                unassignedCharacters.Add(i, unassignedCharacterList);
+            }
+
+            if (baseAssignedCharacters.ContainsKey(curFile.GetLines()[i].id))
+            {
+                List<string> assignedCharacterList = baseAssignedCharacters[curFile.GetLines()[i].id];
+                assignedCharacters.Add(i, assignedCharacterList);
             }
         }
 
@@ -895,6 +971,18 @@ public class DialogueManager : Draggable
                 List<DialogueCharacterPack> pack = basePacks[curFile.GetLines()[i].id - 1];
                 packs.Add(i, pack);
             }
+
+            if (baseUnassignedCharacters.ContainsKey(curFile.GetLines()[i].id - 1))
+            {
+                List<string> unassignedCharacterList = baseUnassignedCharacters[curFile.GetLines()[i].id - 1];
+                unassignedCharacters.Add(i, unassignedCharacterList);
+            }
+
+            if (baseAssignedCharacters.ContainsKey(curFile.GetLines()[i].id - 1))
+            {
+                List<string> assignedCharacterList = baseAssignedCharacters[curFile.GetLines()[i].id - 1];
+                assignedCharacters.Add(i, assignedCharacterList);
+            }
         }
         if(dialogueClips.ContainsKey(curLine.id + 1))
             dialogueClips.Remove(curLine.id + 1);
@@ -905,6 +993,18 @@ public class DialogueManager : Draggable
 
         if (packs.ContainsKey(curLine.id + 1))
             packs.Remove(curLine.id + 1);
+
+        //Create shallow copies so that the value doesn't change along
+        if (unassignedCharacters.ContainsKey(curLine.id + 1))
+            unassignedCharacters.Remove(curLine.id + 1);
+        unassignedCharacters.Add(curLine.id + 1, new List<string>(baseUnassignedCharacters[curLine.id]));
+
+        if (assignedCharacters.ContainsKey(curLine.id + 1))
+            assignedCharacters.Remove(curLine.id + 1);
+        assignedCharacters.Add(curLine.id + 1, new List<string>(baseAssignedCharacters[curLine.id]));
+
+        //UnityEngine.Debug.Log(groups.Values.Count);
+        //DebugUtils.DebugList(unassignedCharacters[curLine.id + 1]);
 
         if (dialogue != null) dialogue.Load(curFile);
         if(characters != null)
@@ -930,6 +1030,8 @@ public class DialogueManager : Draggable
         List<AudioClip> priorDialogues = new List<AudioClip>();
         List<GameObject> priorGroups = new List<GameObject>();
         List<List<DialogueCharacterPack>> priorPacks = new List<List<DialogueCharacterPack>>();
+        List<List<string>> priorUnassignedCharacters = new List<List<string>>();
+        List<List<string>> priorAssignedCharacters = new List<List<string>>();
 
         for (int i = 0; i < curFile.GetLines().Count; i++)
         {
@@ -949,6 +1051,16 @@ public class DialogueManager : Draggable
                 {
                     priorPacks.Add(packs[curFile.GetLines()[i].id]);
                 }
+
+                if (unassignedCharacters.ContainsKey(curFile.GetLines()[i].id))
+                {
+                    priorUnassignedCharacters.Add(unassignedCharacters[curFile.GetLines()[i].id]);
+                }
+
+                if (assignedCharacters.ContainsKey(curFile.GetLines()[i].id))
+                {
+                    priorAssignedCharacters.Add(assignedCharacters[curFile.GetLines()[i].id]);
+                }
             }
         }
 
@@ -962,6 +1074,12 @@ public class DialogueManager : Draggable
 
         Dictionary<int, List<DialogueCharacterPack>> basePacks = new Dictionary<int, List<DialogueCharacterPack>>(packs);
         packs.Clear();
+
+        Dictionary<int, List<string>> baseUnassignedCharacters = new Dictionary<int, List<string>>(unassignedCharacters);
+        unassignedCharacters.Clear();
+
+        Dictionary<int, List<string>> baseAssignedCharacters = new Dictionary<int, List<string>>(assignedCharacters);
+        assignedCharacters.Clear();
 
         for (int i = 0; i < id; i++)
         {
@@ -982,6 +1100,18 @@ public class DialogueManager : Draggable
                 List<DialogueCharacterPack> pack = basePacks[curFile.GetLines()[i].id];
                 packs.Add(i, pack);
             }
+
+            if (baseUnassignedCharacters.ContainsKey(curFile.GetLines()[i].id))
+            {
+                List<string> unassignedCharacterList = baseUnassignedCharacters[curFile.GetLines()[i].id];
+                unassignedCharacters.Add(i, unassignedCharacterList);
+            }
+
+            if (baseAssignedCharacters.ContainsKey(curFile.GetLines()[i].id))
+            {
+                List<string> assignedCharacterList = baseAssignedCharacters[curFile.GetLines()[i].id];
+                assignedCharacters.Add(i, assignedCharacterList);
+            }
         }
 
         for(int i = id; i < curFile.GetLines().Count; i++)
@@ -990,7 +1120,8 @@ public class DialogueManager : Draggable
             groups.Add(i, priorGroups[i - id]);
             groups[i].name = (i - id).ToString();
             packs.Add(i, priorPacks[i - id]);
-
+            unassignedCharacters.Add(i, priorUnassignedCharacters[i - id]);
+            assignedCharacters.Add(i, priorAssignedCharacters[i - id]);
             curFile.GetLines()[i].id = i - id;
         }
         
@@ -1000,6 +1131,9 @@ public class DialogueManager : Draggable
             curFile.AddLine();
             dialogueClips.Add(0, null);
             CreateCharacterGroup(0);
+            unassignedCharacters.Add(0, new List<string>());
+            assignedCharacters.Add(0, new List<string>());
+
         }
         else if(id >= curFile.GetLines().Count - 1)
         {
@@ -1015,7 +1149,6 @@ public class DialogueManager : Draggable
         if (characters != null)
         {
             characters.Load(curFile);
-            characters.ChangeSelections();
         }
         if (scripts != null)
         {

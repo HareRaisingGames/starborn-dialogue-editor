@@ -137,6 +137,9 @@ public class DialogueCharacterPackManager : OptionSelection
             }
             addButton.GetComponent<RectTransform>().anchoredPosition = defaultButtonPos;
             positionPlacer.anchoredPosition = defaultPosition;
+            //Debug.Log(manager.unassignedCharacters[dialogueFile.id].Count);
+            addButton.gameObject.SetActive(manager.unassignedCharacters[dialogueFile.id].Count != 0);
+
             for (int i = 0; i < dialogueFile.characterPack.Count; i++)
             {
                 CharacterSprite character = null;
@@ -209,6 +212,7 @@ public class DialogueCharacterPackManager : OptionSelection
             charPack.GetComponent<DialogueCharacterPack>().AddCharacterPack(dialogueFile, this, parentID, count);
             positionPlacer.anchoredPosition -= new Vector2(0, charPack.GetComponent<RectTransform>().sizeDelta.y + 10);
             addButton.GetComponent<RectTransform>().anchoredPosition -= new Vector2(0, charPack.GetComponent<RectTransform>().sizeDelta.y + 10);
+            addButton.gameObject.SetActive(manager.unassignedCharacters[parentID].Count != 0);
         }
 
     }
@@ -218,11 +222,16 @@ public class DialogueCharacterPackManager : OptionSelection
 
     }
 
-    public void RemoveCharacterPack(int id)
+    public void RemoveCharacterPack(int id, bool delete = false)
     {
         dialogueFile.characterPack.RemoveAt(id);
         if(manager != null)
         {
+            string character = manager.assignedCharacters[dialogueFile.id][id];
+            manager.assignedCharacters[dialogueFile.id].Remove(character);
+            if(!delete)
+                manager.unassignedCharacters[dialogueFile.id].Add(character);
+            manager.packs[dialogueFile.id][id].UpdateCharacterList();
             manager.packs[dialogueFile.id].RemoveAt(id);
             for (int i = id; i < manager.packs[dialogueFile.id].Count; i++)
             {
@@ -231,6 +240,7 @@ public class DialogueCharacterPackManager : OptionSelection
                 pack.GetComponent<RectTransform>().anchoredPosition += new Vector2(0, pack.GetComponent<RectTransform>().sizeDelta.y + 10);
             }
 
+            addButton.gameObject.SetActive(true);
             addButton.GetComponent<RectTransform>().anchoredPosition = defaultButtonPos;
             positionPlacer.anchoredPosition = defaultPosition;
             for (int i = 0; i < dialogueFile.characterPack.Count; i++)
