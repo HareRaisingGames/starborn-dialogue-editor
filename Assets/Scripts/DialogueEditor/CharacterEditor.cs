@@ -250,7 +250,7 @@ public class CharacterEditor : MonoBehaviour
         }
         if (curFile != null) curFile.setOffset(offset[0],offset[1]);
 
-        Debug.Log(offset[0] + "," + offset[1]);
+        //Debug.Log(offset[0] + "," + offset[1]);
 
         if(spriteHolder.sprite != null)
         {

@@ -395,9 +395,10 @@ public class DialogueManager : Draggable
                     filename = filename.Remove(filename.Length - 4);
                     var path = StarbornFileHandler.ExtractCharacter(paths[0]);
                     SBCFile character = StarbornFileHandler.ReadCharacter(filename);
-                    if(curFile.AddCharacter(character))
+                    CharacterSprite characterSprite = null;
+                    if (curFile.AddCharacter(character))
                     {
-                        CharacterSprite characterSprite = new GameObject(filename).AddComponent<CharacterSprite>();
+                        characterSprite = new GameObject(filename).AddComponent<CharacterSprite>();
                         characterSprite.transform.parent = sprites;
                         characterSprite.character = character;
                         characterSprite.rectTransform.anchoredPosition = Vector2.zero;
@@ -406,6 +407,20 @@ public class DialogueManager : Draggable
                     }
                     else
                     {
+                        if(sprites.childCount > 0)
+                        {
+                            if(sprites.Find(filename) != null)
+                            {
+                                GameObject child = sprites.Find(filename).gameObject;
+                                Destroy(child);
+                                characterSprite = new GameObject(filename).AddComponent<CharacterSprite>();
+                                characterSprite.transform.parent = sprites;
+                                characterSprite.character = character;
+                                characterSprite.rectTransform.anchoredPosition = Vector2.zero;
+                                characterSprite.rectTransform.localScale = Vector2.one;
+                                characterSprite.gameObject.SetActive(false);
+                            }
+                        }
                         characterFiles.Remove(character);
                         characterList.Remove(filename);
                     }
@@ -416,9 +431,22 @@ public class DialogueManager : Draggable
                     {
                         if(!unassignedCharacters[i].Contains(filename) && !assignedCharacters[i].Contains(filename))
                             unassignedCharacters[i].Add(filename);
+                        //else
+                            //characterSprite.gameObject.SetActive(false);
+
 
                         //UnityEngine.Debug.Log($"{i}: {unassignedCharacters.Count}");
                     }
+
+                    if(assignedCharacters[curFile.id].Contains(filename))
+                    {
+                        characterSprite.gameObject.SetActive(true);
+                        if (characters != null)
+                        {
+                            characters.Load(curFile);
+                        }
+                    }
+                        
 
                     if (metadata != null) metadata.UpdateCharacterList();
                     if (characters != null) characters.addButton.gameObject.SetActive(true);
