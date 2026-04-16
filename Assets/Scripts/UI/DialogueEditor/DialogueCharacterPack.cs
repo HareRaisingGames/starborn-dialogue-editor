@@ -51,6 +51,20 @@ public class DialogueCharacterPack : MonoBehaviour
     public int group;
     [HideInInspector]
     public int id;
+
+    public bool isActive
+    {
+        get
+        {
+            if(manager != null)
+            {
+                if (group == manager.curFile.id)
+                    return true;
+            }
+            return false;
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -351,7 +365,7 @@ public class DialogueCharacterPack : MonoBehaviour
         dialogueFile.GetLines()[group].characters[id] = pack;
     }
 
-    public void UpdateCharacterList(bool newCharacter = false)
+    public void UpdateCharacterList(bool newCharacter = false, CharacterSprite sprite = null)
     {
         foreach (KeyValuePair<int, List<DialogueCharacterPack>> packs in manager.packs)
         {
@@ -359,8 +373,29 @@ public class DialogueCharacterPack : MonoBehaviour
             {
                 foreach (DialogueCharacterPack pack in packs.Value)
                 {
-                    if (pack.id == id && !newCharacter)
+                    if (pack.id == id)
+                    {
+                        if (!newCharacter)
+                            continue;
+
+                        string emotionSet = pack.pack.emotion;
+                        //Debug.Log(emotionSet);
+
+                        if (sprite != null)
+                            character = sprite;
+
+                        emotions.Clear();
+                        foreach (Emotion emotion in dialogueFile.GetCharacters()[this.pack.character])
+                        {
+                            emotions.Add(emotion.expression);
+                        }
+
+                        emotionsDropdown.ClearOptions();
+                        emotionsDropdown.AddOptions(emotions);
+                        emotionsDropdown.value = UIUtils.GetDropdownValueByName(emotionsDropdown, emotionSet);
                         continue;
+                    }
+                        
 
                     List<string> updatedOpts = new List<string>();
                     updatedOpts.Add(pack.pack.character);

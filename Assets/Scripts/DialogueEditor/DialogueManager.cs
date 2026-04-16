@@ -419,6 +419,7 @@ public class DialogueManager : Draggable
                                 characterSprite.rectTransform.anchoredPosition = Vector2.zero;
                                 characterSprite.rectTransform.localScale = Vector2.one;
                                 characterSprite.gameObject.SetActive(false);
+                                //characterSprite
                             }
                         }
                         characterFiles.Remove(character);
@@ -455,9 +456,25 @@ public class DialogueManager : Draggable
                     {
                         foreach (DialogueCharacterPack pack in packs[i])
                         {
-                            pack.UpdateCharacterList(true);
+                            pack.UpdateCharacterList(true, characterSprite);
                         }
                     }
+
+                    //Set each currently active character pack to respective sprite
+                    for (int i = 0; i < packs.Keys.Count; i++)
+                    {
+                        foreach (DialogueCharacterPack pack in packs[i])
+                        {
+                            if(pack.isActive)
+                            {
+                                string emotionSet = pack.pack.emotion;
+                                pack.emotionsDropdown.value = UIUtils.GetDropdownValueByName(pack.emotionsDropdown, emotionSet);
+                            }
+                        }
+                    }
+
+
+
                     //Debug.Log(curFile.AddCharacter(character));
                     /*var path = StarbornFileHandler.ExtractDialogue(paths[0]);
                     curFile = StarbornFileHandler.ReadSimpleDialogue(filename);
@@ -1254,7 +1271,7 @@ public class DialogueManager : Draggable
                 }
                 catch (SystemException e)
                 {
-
+                    UnityEngine.Debug.LogWarning(e);
                 }
             }
 
