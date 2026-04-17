@@ -95,6 +95,7 @@ public class DialogueCharacterPackManager : OptionSelection
                     character.gameObject.SetActive(true);
                     character.flipX = dialogueFile.characterPack[i].flipX;
                     character.expression = dialogueFile.characterPack[i].emotion;
+                    character.isSpeaking = dialogueFile.characterPack[i].isSpeaking;
                     Alignment align = dialogueFile.characterPack[i].alignment;
                     float xPos = 0;
                     switch (align)
@@ -168,6 +169,7 @@ public class DialogueCharacterPackManager : OptionSelection
                     character.gameObject.SetActive(true);
                     character.flipX = dialogueFile.characterPack[i].flipX;
                     character.expression = dialogueFile.characterPack[i].emotion;
+                    character.isSpeaking = dialogueFile.characterPack[i].isSpeaking;
                     Alignment align = dialogueFile.characterPack[i].alignment;
                     float xPos = 0;
                     switch (align)

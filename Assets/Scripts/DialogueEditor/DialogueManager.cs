@@ -342,6 +342,7 @@ public class DialogueManager : Draggable
             characterSprite.rectTransform.anchoredPosition = Vector2.zero;
             characterSprite.rectTransform.localScale = Vector3.one;
             characterSprite.gameObject.SetActive(false);
+            characterSprite.speakingAction = CharacterIsSpeaking;
             characterFiles.Add(characterFile);
             characterList.Add(character.Key);
             /*foreach (KeyValuePair<int, List<string>> unassignedCharacterList in unassignedCharacters)
@@ -403,6 +404,7 @@ public class DialogueManager : Draggable
                         characterSprite.character = character;
                         characterSprite.rectTransform.anchoredPosition = Vector2.zero;
                         characterSprite.rectTransform.localScale = Vector2.one;
+                        characterSprite.speakingAction = CharacterIsSpeaking;
                         characterSprite.gameObject.SetActive(false);
                     }
                     else
@@ -418,6 +420,7 @@ public class DialogueManager : Draggable
                                 characterSprite.character = character;
                                 characterSprite.rectTransform.anchoredPosition = Vector2.zero;
                                 characterSprite.rectTransform.localScale = Vector2.one;
+                                characterSprite.speakingAction = CharacterIsSpeaking;
                                 characterSprite.gameObject.SetActive(false);
                                 //characterSprite
                             }
@@ -548,6 +551,13 @@ public class DialogueManager : Draggable
         }
     }
 
+    void CharacterIsSpeaking(CharacterSprite sprite, bool value)
+    {
+        if (value)
+            sprite.color = Color.white;
+        else
+            sprite.color = Color.gray;
+    }
     public void AddMusic(TMP_Text text, Button button = null)
     {
         var extensions = new[]
@@ -768,6 +778,7 @@ public class DialogueManager : Draggable
                                 character.gameObject.SetActive(true);
                                 character.flipX = packs[curFile.id][k].pack.flipX;
                                 character.expression = packs[curFile.id][k].pack.emotion;
+                                character.isSpeaking = packs[curFile.id][k].pack.isSpeaking;
                                 Alignment align = packs[curFile.id][k].pack.alignment;
                                 float xPos = 0;
                                 switch (align)

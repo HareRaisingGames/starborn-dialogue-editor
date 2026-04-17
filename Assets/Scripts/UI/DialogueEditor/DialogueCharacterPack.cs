@@ -363,6 +363,8 @@ public class DialogueCharacterPack : MonoBehaviour
     {
         pack.isSpeaking = speaker;
         dialogueFile.GetLines()[group].characters[id] = pack;
+        if (character != null)
+            character.isSpeaking = speaker;
     }
 
     public void UpdateCharacterList(bool newCharacter = false, CharacterSprite sprite = null)
