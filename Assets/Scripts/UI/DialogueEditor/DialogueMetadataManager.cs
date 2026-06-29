@@ -16,6 +16,10 @@ public class DialogueMetadataManager : OptionSelection
     public Button playMusic;
     public Button removeMusic;
 
+    public TMP_Dropdown soundEffects;
+    public Button addSFX;
+    public Button removeSFX;
+
     Image playButton;
 
     public TMP_Dropdown character;
@@ -42,6 +46,9 @@ public class DialogueMetadataManager : OptionSelection
 
             addCharacter.onClick.AddListener(manager.AddCharacter);
             removeCharacter.onClick.AddListener(manager.RemoveCharacter);
+
+            addSFX.onClick.AddListener(manager.AddSoundEffect);
+            removeSFX.onClick.AddListener(manager.RemoveSoundEffect);
 
             description.onValueChanged.AddListener(manager.SetDescription);
 
@@ -70,6 +77,7 @@ public class DialogueMetadataManager : OptionSelection
             newFile.onClick.AddListener(manager.CreateNewFile);
 
             UpdateCharacterList();
+            UpdateSFXList();
         }
     }
 
@@ -94,7 +102,8 @@ public class DialogueMetadataManager : OptionSelection
         chapter.text = sBDFile.chapter.ToString();
         type.value = new List<string>(System.Enum.GetNames(typeof(StoryType))).IndexOf(sBDFile.type.ToString());
         UpdateCharacterList();
-
+        UpdateSFXList();
+        
         if (sBDFile.music == null)
             addMusic.GetComponentInChildren<TMP_Text>().text = "Add Music";
 
@@ -123,5 +132,11 @@ public class DialogueMetadataManager : OptionSelection
     {
         character.ClearOptions();
         character.AddOptions(manager.characterList);
+    }
+
+    public void UpdateSFXList()
+    {
+        soundEffects.ClearOptions();
+        soundEffects.AddOptions(manager.sfxList);
     }
 }

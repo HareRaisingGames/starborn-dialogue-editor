@@ -51,6 +51,9 @@ public class DialogueManager : Draggable
     [HideInInspector]
     public List<string> bgList = new List<string>();
 
+    [HideInInspector]
+    public List<string> sfxList = new List<string>();
+
     public Image bgImage;
     public TMP_Text dialogueText;
 
@@ -605,6 +608,58 @@ public class DialogueManager : Draggable
 
     }
 
+    public void AddSoundEffect()
+    {
+        var extensions = new[]
+        {
+            new ExtensionFilter("Audio Files", "mp3", "wav", "ogg", "acc", "flac", "aiff")
+        };
+        StandaloneFileBrowser.OpenFilePanelAsync("Load Audio", "", extensions, false, async (string[] paths) =>
+        {
+            if (paths.Length > 0)
+            {
+                if (loadingIcon != null) loadingIcon.SetActive(true);
+                try
+                {
+                    var filename = paths[0].Split("\\")[paths[0].Split("\\").Length - 1];
+                    filename = filename.Remove(filename.Length - 4);
+                    AudioByte audio = new AudioByte(paths[0]);
+                    if(curFile.GetSoundEffects().ContainsKey(filename))
+                    {
+                        curFile.GetSoundEffects()[filename] = audio;
+                        sfxList.Remove(filename);
+                    }
+                    else
+                        curFile.GetSoundEffects().Add(filename, audio);
+                    await Task.Delay(500);
+                    sfxList.Add(filename);
+                    if (metadata != null) metadata.UpdateSFXList();
+                    //text.text = curFile.music.name;
+                }
+                catch(SystemException e)
+                {
+
+                }
+            }
+            if (loadingIcon != null) loadingIcon.SetActive(false);
+        });
+    }
+
+    public void RemoveSoundEffect()
+    {
+        if(curFile.GetSoundEffects().Count == 0)
+            return;
+        
+        if(metadata != null)
+        {
+            string sfx = metadata.soundEffects.options[metadata.soundEffects.value].text;
+            curFile.RemoveSoundEffect(sfx);
+            sfxList.Remove(sfx);
+            sfxList = sfxList.Distinct().ToList();
+            metadata.UpdateSFXList();
+        }
+    }
+
     SimpleSBDFile beforeSave;
     public void LoadFile()
     {
@@ -651,15 +706,22 @@ public class DialogueManager : Draggable
 
                     //Add in characters
                     LoadCharacters();
+
                     //Add in backgrounds
                     bgList.Clear();
-
                     foreach (string bg in curFile.GetBackgrounds().Keys)
                     {
                         bgList.Add(bg);
                     }
-
                     bgList = bgList.Distinct().ToList();
+
+                    //Add in sound effects
+                    sfxList.Clear();
+                    foreach (string sfx in curFile.GetSoundEffects().Keys)
+                    {
+                        sfxList.Add(sfx);
+                    }
+                    sfxList = sfxList.Distinct().ToList();
 
                     dialogueClips.Clear();
                     groups.Clear();
@@ -812,9 +874,9 @@ public class DialogueManager : Draggable
                         if (curOption != DialogueOptions.Script) scripts.gameObject.SetActive(false);
                     }
 
-                        // Load in music file if exists
-                        if (curFile.music != null)
-                        musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
+                    // Load in music file if exists
+                    if (curFile.music != null)
+                    musicSource.clip = await AudioUtils.LoadMusic(curFile.music);
 
                     SetDialogueClip(dialogueClips[curFile.id]);
                     loadedFile = new(curFile);
