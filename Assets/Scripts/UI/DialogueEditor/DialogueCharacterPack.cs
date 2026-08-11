@@ -254,21 +254,22 @@ public class DialogueCharacterPack : MonoBehaviour
                 {
                     character = charac.GetComponent<CharacterSprite>();
                     character.gameObject.SetActive(true);
-                    character.offsetX = pack.offset;
                     character.flipX = pack.flipX;
+                    character.isSpeaking = pack.isSpeaking;
                     float xPos = 0;
                     switch (pack.alignment)
                     {
                         case Alignment.left:
-                            xPos = -325;
+                            xPos = -250;
                             break;
                         case Alignment.right:
-                            xPos = 325;
+                            xPos = 250;
                             break;
                         default:
                             xPos = 0;
                             break;
                     }
+                    character.offsetX = pack.alignment == Alignment.right ? -pack.offset : pack.offset;
                     if (character != null)
                         character.position = new Vector2(xPos, 0);
                 }
@@ -327,10 +328,10 @@ public class DialogueCharacterPack : MonoBehaviour
         switch(pack.alignment)
         {
             case Alignment.left:
-                xPos = -325;
+                xPos = -250;
                 break;
             case Alignment.right:
-                xPos = 325;
+                xPos = 250;
                 break;
             default:
                 xPos = 0;
@@ -346,7 +347,7 @@ public class DialogueCharacterPack : MonoBehaviour
         dialogueFile.GetLines()[group].characters[id] = pack;
 
         if (character != null)
-            character.SetXOffset(offset);
+            character.SetXOffset(pack.alignment == Alignment.right ? -offset : offset);
 
         //Debug.Log(character.position);
     }

@@ -554,7 +554,7 @@ public class DialogueManager : Draggable
         }
     }
 
-    void CharacterIsSpeaking(CharacterSprite sprite, bool value)
+    protected void CharacterIsSpeaking(CharacterSprite sprite, bool value)
     {
         if (value)
             sprite.color = Color.white;
@@ -846,17 +846,17 @@ public class DialogueManager : Draggable
                                 switch (align)
                                 {
                                     case Alignment.left:
-                                        xPos = -325;
+                                        xPos = -250;
                                         break;
                                     case Alignment.right:
-                                        xPos = 325;
+                                        xPos = 250;
                                         break;
                                     default:
                                         xPos = 0;
                                         break;
                                 }
                                 character.position = new Vector2(xPos, 0);
-                                character.SetXOffset(packs[curFile.id][k].pack.offset);
+                                character.SetXOffset(align == Alignment.right ? -packs[curFile.id][k].pack.offset : packs[curFile.id][k].pack.offset);
                                 //character.position;
                             }
 

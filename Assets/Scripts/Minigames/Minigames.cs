@@ -8,5 +8,5 @@ public enum Minigame
     None,
     Tosstail,
     LemonDrop,
-    Boomerang
+    GlassPass
 }

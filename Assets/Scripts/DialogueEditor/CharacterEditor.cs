@@ -9,6 +9,7 @@ using SFB;
 using Rabbyte;
 using TMPro;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 public class CharacterEditor : MonoBehaviour
 {
@@ -40,6 +41,18 @@ public class CharacterEditor : MonoBehaviour
     public TMP_Dropdown ghostDropdown;
     public Image ghostSprite;
 
+    [Header("Dependencies")]
+    [SerializeField] private GraphicRaycaster canvasRaycaster;
+    [SerializeField] private EventSystem eventSystem;
+
+    public UnityEvent onImageClick;
+    [Header("Colors")]
+    public Color defaultColor = Color.white;
+    public Color hoverColor;
+    public Color pressedColor;
+
+    protected bool isHoveringAfterClicking;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -55,7 +68,115 @@ public class CharacterEditor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(spriteHolder != null)
+        {
+            if(Input.GetMouseButtonUp(0))
+            {
+                if(IsCursorOverHiddenButton(spriteHolder.rectTransform) && !IsCursorHoveringOverRealButton() && isHoveringAfterClicking)
+                {
+                    onImageClick?.Invoke();
+                    isHoveringAfterClicking = false;
+                }
+            }
+            else
+            {
+                isHoveringAfterClicking = false;
+            }
 
+            if(Input.GetMouseButton(0))
+            {
+                if(IsCursorOverHiddenButton(spriteHolder.rectTransform) && !IsCursorHoveringOverRealButton())
+                {
+                    spriteHolder.color = pressedColor;
+                    isHoveringAfterClicking = true;
+                }
+            }
+            else
+            {
+                if(IsCursorOverHiddenButton(spriteHolder.rectTransform) && !IsCursorHoveringOverRealButton())
+                {
+                    spriteHolder.color = hoverColor;
+                }
+                else
+                    spriteHolder.color = defaultColor;
+            }
+        }
+
+
+
+
+    }
+
+    public bool IsCursorOverHiddenButton(RectTransform targetButton)
+    {
+        if (targetButton == null || canvasRaycaster == null || eventSystem == null)
+            return false;
+
+        // Set up the pointer data at the current cursor position
+        PointerEventData pointerData = new PointerEventData(eventSystem)
+        {
+            position = Input.mousePosition
+        };
+
+        // Create a list to store all UI objects hit by the raycast
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+
+        // Fire the raycast through all UI layers
+        canvasRaycaster.Raycast(pointerData, raycastResults);
+
+        // Iterate through all objects hit under the cursor
+        foreach (RaycastResult result in raycastResults)
+        {
+            // Check if this hit object is our target button
+            if (result.gameObject == targetButton.gameObject)
+            {
+                return true;
+            }
+            
+            // Optional: Also check if the hit object is a child/component of the target button
+            if (result.gameObject.transform.IsChildOf(targetButton.transform))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool IsCursorHoveringOverRealButton()
+    {
+        if(canvasRaycaster == null || eventSystem == null)
+            return false;
+
+                // Set up the pointer data at the current cursor position
+        PointerEventData pointerData = new PointerEventData(eventSystem)
+        {
+            position = Input.mousePosition
+        };
+
+        // Create a list to store all UI objects hit by the raycast
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+
+        // Fire the raycast through all UI layers
+        canvasRaycaster.Raycast(pointerData, raycastResults);
+
+        // Iterate through all objects hit under the cursor
+        foreach (RaycastResult result in raycastResults)
+        {
+            // Check if this hit object is our target button
+            if (result.gameObject.GetComponent<Button>())
+            {
+                return true;
+            }
+            
+            // Optional: Also check if the hit object is a child/component of the target button
+            if (result.gameObject.GetComponent<Button>())
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public void AddImage()
@@ -207,6 +328,7 @@ public class CharacterEditor : MonoBehaviour
     {
         Texture2D tex = new Texture2D(2, 2);
         tex.LoadImage(imageData);
+        tex.filterMode = FilterMode.Trilinear;
         Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
         if (imageData != null)
         {
