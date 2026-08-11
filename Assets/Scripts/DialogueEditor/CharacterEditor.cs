@@ -164,13 +164,13 @@ public class CharacterEditor : MonoBehaviour
         foreach (RaycastResult result in raycastResults)
         {
             // Check if this hit object is our target button
-            if (result.gameObject.GetComponent<Button>())
+            if (result.gameObject.GetComponent<RectTransform>() && spriteHolder.gameObject != null && result.gameObject != spriteHolder.gameObject)
             {
                 return true;
             }
             
             // Optional: Also check if the hit object is a child/component of the target button
-            if (result.gameObject.GetComponent<Button>())
+            if (result.gameObject.GetComponent<RectTransform>() && spriteHolder.gameObject != null && result.gameObject != spriteHolder.gameObject)
             {
                 return true;
             }
@@ -330,7 +330,7 @@ public class CharacterEditor : MonoBehaviour
         tex.LoadImage(imageData);
         tex.filterMode = FilterMode.Bilinear;
         tex.wrapMode = TextureWrapMode.Clamp;
-        tex.Apply();
+        tex.Apply(false);
         // tex.filterMode = FilterMode.Trilinear;
         // Debug.Log(tex.width);
         Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
