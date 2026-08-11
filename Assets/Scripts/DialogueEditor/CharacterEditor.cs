@@ -326,9 +326,13 @@ public class CharacterEditor : MonoBehaviour
 
     public void SetSprite(byte[] imageData)
     {
-        Texture2D tex = new Texture2D(2, 2);
+        Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         tex.LoadImage(imageData);
-        tex.filterMode = FilterMode.Trilinear;
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+        tex.Apply();
+        // tex.filterMode = FilterMode.Trilinear;
+        // Debug.Log(tex.width);
         Sprite sprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
         if (imageData != null)
         {
